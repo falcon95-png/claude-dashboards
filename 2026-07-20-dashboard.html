@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Dashboard — MYR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#2a3038;--text:#e6edf3;--muted:#8b949e;--green:#3fb950;--red:#f85149;--accent:#58a6ff;--amber:#d29922}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;padding:0 26px 40px;max-width:1180px;margin:0 auto}
+  h1{font-size:20px;font-weight:600}
+  h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:30px 0 12px}
+  .sub{color:var(--muted);font-size:12.5px;margin:2px 0 4px}
+  .green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+  .tabbar{position:sticky;top:0;background:var(--bg);padding:22px 0 12px;z-index:10;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;gap:8px;align-items:center}
+  .tabbar h1{margin-right:14px}
+  .tab{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:600;padding:7px 18px;border-radius:8px;cursor:pointer}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#0d1117}
+  .tabpane{display:none}.tabpane.active{display:block}
+  .hero{background:linear-gradient(135deg,#161b22,#1b2130);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:34px;align-items:baseline}
+  .hero .label{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+  .hero .v{font-size:32px;font-weight:700;margin-top:3px}.hero .v.mid{font-size:26px}
+  .hero .fx{margin-left:auto;text-align:right}.hero .fx .v{font-size:18px;font-weight:600}
+  .msum{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:6px}
+  .mcard{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:16px 18px}
+  .mcard .flag{font-size:14px;font-weight:600;margin-bottom:10px}
+  .mcard .row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+  .mcard .row .k{color:var(--muted)}.mcard .big{font-size:22px;font-weight:650}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:6px 16px 12px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:right;white-space:nowrap}
+  th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border)}
+  td{border-bottom:1px solid #20262e}
+  th.l,td.l{text-align:left}
+  .nm{font-weight:600;font-size:14px}.tk{color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.02em}
+  tr.sub td{border-top:2px solid var(--border);border-bottom:none;font-weight:650}
+  tr.sub td .k{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase}
+  tr.cash td{color:var(--muted)}tr.cash td .nm{color:var(--muted);font-weight:500}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chartbox{position:relative;height:250px}
+  .movers .mv{display:flex;justify-content:space-between;align-items:center;padding:8px 2px;border-bottom:1px solid #20262e;font-size:13px}
+  .movers .mv:last-child{border-bottom:none}
+  .mvhead{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .placeholder{color:var(--muted);font-size:13px;font-style:italic;padding:28px 0;text-align:center}
+  .pill{display:inline-block;background:#21262d;border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--muted);margin-left:6px;vertical-align:middle}
+  .badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:0;vertical-align:middle;font-weight:600}
+  .b-buy{background:rgba(63,185,80,.15);color:var(--green)}.b-hold{background:rgba(210,153,34,.15);color:var(--amber)}.b-sell{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-web{background:#21262d;color:var(--muted);font-weight:500}
+  .bar{height:6px;border-radius:4px;background:#20262e;overflow:hidden;margin-top:4px}.bar>span{display:block;height:100%}
+  .cat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:14px}
+  .cat h3{font-size:15px;margin-bottom:2px}
+  .cat .ctag{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .cat .facts{font-size:13px;color:#c9d1d9;margin-bottom:10px}
+  .exp{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px}
+  .chip .d{font-weight:700}.chip.held{border-color:#3b4048}
+  .heldtag{font-size:9px;background:#21262d;color:var(--muted);padding:0 4px;border-radius:4px;margin-left:3px}
+  .cat .watch{font-size:12px;color:var(--muted);border-top:1px solid #20262e;padding-top:8px}
+  .cat .srcs{margin-top:6px;font-size:11.5px}.cat .srcs a{color:var(--accent);text-decoration:none;margin-right:12px}
+  .disc{font-size:11.5px;color:var(--muted);font-style:italic;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+  .dirbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+  .dir-pos{background:rgba(63,185,80,.15);color:var(--green)}
+  .dir-neg{background:rgba(248,81,73,.15);color:var(--red)}
+  .dir-mix{background:rgba(210,153,34,.15);color:var(--amber)}
+  @media(max-width:820px){.msum,.two{grid-template-columns:1fr}.hero .fx{margin-left:0;text-align:left}body{padding:0 14px 30px}.tabbar{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+  <div class="tabbar">
+    <h1>Investment Dashboard <span class="pill">Base: MYR</span></h1>
+  </div>
+
+  <div id="tab-portfolio" class="tabpane active">
+    <div class="sub" id="asof"></div>
+    <div class="hero">
+      <div><div class="label">Total Portfolio Value</div><div class="v" id="tv"></div></div>
+      <div><div class="label">Total Unrealized P&amp;L</div><div class="v mid" id="pnl"></div></div>
+      <div class="fx"><div class="label">USD / MYR</div><div class="v" id="fx"></div></div>
+    </div>
+    <div class="msum" id="msum"></div>
+    <h2>Malaysia — Bursa (MYR)</h2>
+    <div class="panel"><div style="overflow-x:auto"><table id="tbl-MY"></table></div></div>
+    <h2>US &amp; Global (USD)</h2>
+    <div class="panel"><div style="overflow-x:auto"><table id="tbl-US"></table></div></div>
+    <h2>Allocation</h2>
+    <div class="two">
+      <div class="panel" style="padding:16px"><div class="mvhead">By Market</div><div class="chartbox"><canvas id="mkt"></canvas></div></div>
+      <div class="panel" style="padding:16px"><div class="mvhead">By Asset Type</div><div class="chartbox"><canvas id="typ"></canvas></div></div>
+    </div>
+    <h2>Top Movers Today</h2>
+    <div class="two movers">
+      <div class="panel" style="padding:14px 16px"><div class="mvhead">Gainers</div><div id="gain"></div></div>
+      <div class="panel" style="padding:14px 16px"><div class="mvhead">Losers</div><div id="lose"></div></div>
+    </div>
+    <h2>Portfolio History (MYR)</h2>
+    <div class="panel" style="padding:16px"><div class="chartbox" id="histbox"><canvas id="hist"></canvas></div></div>
+    <h2>Dividends — Malaysia (Bursa)</h2>
+    <div class="disc">Payout counts are calendar-year to date. Next ex-dividend dates are shown as confirmed/declared where known, otherwise estimated from the historical payout cadence and marked "est." Yield on cost uses your purchase price (cost basis), not the current market price.</div>
+    <div class="panel"><div style="overflow-x:auto"><table id="tbl-div"></table></div></div>
+    <h2>Catalyst Radar — positive / negative reads on your holdings</h2>
+    <div class="disc">Directional tags are analysis/speculation, not recommendations — they flag exposure and what to watch, so you decide. Facts are sourced.</div>
+    <div id="catalysts"></div>
+  </div>
+
+<script>
+/* DATA-START — the daily task replaces everything between DATA-START and DATA-END. Do not edit markup/CSS/logic outside these markers. */
+const FX_USD = 4.08579854;
+const asOf = "2026-07-20";
+const holdings = [
+  {t:"5238",n:"AirAsia X",mkt:"MY",s:1159.0,cur:"MYR",p:1.11,vn:1286.49,vm:1286.49,pm:1286.49,d:-0.89286},
+  {t:"5099",n:"Capital A (AirAsia)",mkt:"MY",s:3000.0,cur:"MYR",p:0.38,vn:1140.0,vm:1140.0,pm:-9090.0,d:-2.5641},
+  {t:"5227",n:"IGB REIT",mkt:"MY",s:5600.0,cur:"MYR",p:2.72,vn:15232.0,vm:15232.0,pm:5751.2,d:0},
+  {t:"0166",n:"Inari Amertron",mkt:"MY",s:900.0,cur:"MYR",p:2.17,vn:1953.0,vm:1953.0,pm:-1038.6,d:-1.36364},
+  {t:"1155",n:"Malayan Banking (Maybank)",mkt:"MY",s:1200.0,cur:"MYR",p:11.2,vn:13440.0,vm:13440.0,pm:2952.0,d:1.44928},
+  {t:"5176",n:"Sunway REIT",mkt:"MY",s:4900.0,cur:"MYR",p:2.28,vn:11172.0,vm:11172.0,pm:3082.1,d:1.78571},
+  {t:"AAPL",n:"Apple",mkt:"US",s:1.0,cur:"USD",p:333.74,vn:333.74,vm:1363.5944,pm:670.7247,d:0.14403},
+  {t:"AS",n:"Amer Sports",mkt:"US",s:2.0,cur:"USD",p:36.44,vn:72.88,vm:297.773,pm:10.0919,d:1.13794},
+  {t:"DUOL",n:"Duolingo",mkt:"US",s:1.0,cur:"USD",p:133.85,vn:133.85,vm:546.8841,pm:-225.8221,d:3.80798},
+  {t:"LULU",n:"Lululemon",mkt:"US",s:0.4,cur:"USD",p:116.33,vn:46.532,vm:190.1204,pm:-293.2296,d:-2.07088},
+  {t:"NVDA",n:"NVIDIA",mkt:"US",s:2.0,cur:"USD",p:202.81,vn:405.62,vm:1657.2816,pm:666.7206,d:-2.21311},
+  {t:"SPY",n:"SPDR S&P 500 ETF",mkt:"US",s:2.2908,cur:"USD",p:743.29,vn:1702.7287,vm:6957.0066,pm:1283.1278,d:-0.98972},
+  {t:"VUAA",n:"Vanguard S&P 500 UCITS ETF",mkt:"US",s:18.2479,cur:"USD",p:144.3,vn:2633.172,vm:10758.6102,pm:731.4066,d:-1.25907},
+  {t:"VWRA",n:"Vanguard FTSE All-World UCITS ETF",mkt:"US",s:2.5706,cur:"USD",p:186.98,vn:480.6508,vm:1963.8423,pm:-30.2317,d:-1.28814},
+  {t:"CASH-USD",n:"US Brokerage Cash",mkt:"US",s:222.19,cur:"USD",p:1.0,vn:222.19,vm:907.8236,pm:0.0,d:0,cash:true}
+];
+const history = [{date:"2026-07-12",value:68592.20},{date:"2026-07-13",value:68595.16},{date:"2026-07-14",value:68691.11},{date:"2026-07-15",value:69060.09},{date:"2026-07-16",value:68755.09},{date:"2026-07-18",value:68951.58},{date:"2026-07-19",value:68906.93},{date:"2026-07-20",value:68866.43}];
+const dividends = [
+  {t:"5238",n:"AirAsia X",timesThisYear:0,nextEx:"N/A",nextExConfirmed:true,costBasis:0.0,ytd:null,y2025:null,y2024:null,y2023:null,y2022:null,note:"No dividend history; cost basis is zero (shares transferred in)"},
+  {t:"5099",n:"Capital A (AirAsia)",timesThisYear:0,nextEx:"N/A",nextExConfirmed:true,costBasis:3.41,ytd:0.0,y2025:0.0,y2024:0.0,y2023:0.0,y2022:0.0,note:"No dividends paid — company was under PN17 financially-distressed status until 2026-05-20"},
+  {t:"5227",n:"IGB REIT",timesThisYear:2,nextEx:"~Aug 2026",nextExConfirmed:false,costBasis:1.693,ytd:0.0697,y2025:0.1128,y2024:0.109,y2023:0.1023,y2022:0.0957},
+  {t:"0166",n:"Inari Amertron",timesThisYear:1,nextEx:"~Sep 2026",nextExConfirmed:false,costBasis:3.324,ytd:0.01,y2025:0.0583,y2024:0.065,y2023:0.078,y2022:0.098},
+  {t:"1155",n:"Malayan Banking (Maybank)",timesThisYear:1,nextEx:"~Sep 2026",nextExConfirmed:false,costBasis:8.74,ytd:0.33,y2025:0.62,y2024:0.6,y2023:0.59,y2022:0.58},
+  {t:"5176",n:"Sunway REIT",timesThisYear:1,nextEx:"2026-08-17",nextExConfirmed:true,costBasis:1.651,ytd:0.0482,y2025:0.15,y2024:0.0934,y2023:0.0962,y2022:0.0702}
+];
+const catalysts = [
+  {theme:"AirAsia Group completes rebrand from AirAsia X as Capital A pursues Hong Kong dual listing",tag:"Malaysia · Aviation",dir:"mix",
+   facts:"AirAsia X Bhd's Bursa ticker changed from AAX to AAGB on July 14, 2026 as it was renamed AirAsia Group Bhd, following its completed acquisition of AirAsia Aviation Group and AirAsia Bhd from Capital A (I3investor). The enlarged group's FY2026 net gearing ex-lease is projected at 155%, expected to ease to ~55% in FY2027 as consolidation cash flows build. Separately, Capital A exited its Practice Note 17 (PN17) financially-distressed status on May 20, 2026 and is targeting a dual listing on the Hong Kong Stock Exchange as early as July/August 2026 (market coverage via I3investor); its Q1 2026 results missed expectations on teething issues at Move, Santan and BigPay.",
+   exposure:[{tk:"5238",dir:"~",note:"Group rebrand carries elevated post-acquisition leverage (155% gearing) that is expected to normalize over FY2027"},{tk:"5099",dir:"~",note:"PN17 exit is a positive de-risking event; HK listing plan and Q1 miss are two-sided near-term"}],
+   watch:"Execution and timing of the HK dual listing, FY2026 gearing trajectory as consolidation costs roll off, 2H26 performance after a guided quiet 2Q26",
+   srcs:[{s:"The Star",u:"https://www.thestar.com.my/business/business-news/2026/07/13/airasia-x-to-undergo-name-change-to-airasia-group-from-july-14"},{s:"I3investor",u:"https://klse.i3investor.com/web/stock/overview/5238"},{s:"I3investor",u:"https://klse.i3investor.com/web/stock/news-blogs/5099"}]},
+  {theme:"Maybank's Q1 profit misses on weaker trading income even as margins improve; REIT dividend withholding tax rules change",tag:"Malaysia · Banking & REITs",dir:"mix",
+   facts:"Maybank's Q1 FY26 net profit fell 4.2% y/y to RM2.48bn, missing the RM2.73bn consensus, driven by weaker non-interest income from trading and forex; net interest margin nonetheless improved to 2.14% from 2.04% (market coverage). Maybank Indonesia became a Financial Conglomeration Holding Company on July 1, 2026. Separately, IGB REIT posted 52% y/y growth in Q1 2026 net property income to RM159.2m, and EPF (a substantial shareholder) bought 94,700 IGB REIT shares on June 11, 2026 (KLSE Screener). Across the REIT sector, Malaysia removed the preferential 10% withholding tax rate on REIT dividends for most non-corporate investors starting 2026, so distributions are now taxed at prevailing individual rates with no withholding deduction.",
+   exposure:[{tk:"1155",dir:"~",note:"Q1 profit miss on trading income, but core NIM/fund-based income trends improved"},{tk:"5227",dir:"+",note:"NPI +52% y/y in Q1 2026; EPF added to its stake in June"},{tk:"5176",dir:"~",note:"Fundamentally unaffected, but net after-tax distribution is now lower for non-corporate holders under the new withholding rules"}],
+   watch:"Q2 FY26 Maybank results for a bounce-back in trading income, any further REIT tax-policy clarification, EPF/institutional flows into Bursa REITs",
+   srcs:[{s:"Morningstar",u:"https://www.morningstar.com/stocks/xkls/1155/quote"},{s:"I3investor",u:"https://klse.i3investor.com/web/stock/overview/5227"},{s:"KLSE Screener",u:"https://www.klsescreener.com/v2/stocks/view/5176"}]},
+  {theme:"Inari Amertron upgraded to Buy on RF recovery and photonics, but its main Broadcom/Apple contract expires this year",tag:"Malaysia · Semiconductors",dir:"pos",
+   facts:"Public IB upgraded Inari Amertron to Buy in June 2026 with a RM2.60 target, citing RF business recovery and photonics as structural growth drivers (MarketScreener); the stock closed at RM2.32 on July 1, 2026. Inari's RF chip supply deal for Broadcom (via Apple) expires in Q4 2026 — management has been discussing diversification away from Broadcom dependence since 2024 (I3investor).",
+   exposure:[{tk:"0166",dir:"+",note:"Analyst upgrade and RF recovery thesis, offset by a real dependency risk on the Q4 2026 Broadcom contract renewal"}],
+   watch:"Whether the Broadcom/Apple RF deal is renewed or shrinks in Q4 2026, progress on photonics diversification, next quarterly result for RF volume trends",
+   srcs:[{s:"MarketScreener",u:"https://www.marketscreener.com/quote/stock/INARI-AMERTRON-8932372/consensus/"},{s:"Yahoo Finance",u:"https://finance.yahoo.com/quote/0166.KL/"}]},
+  {theme:"Apple presses to fresh record highs on an HSBC upgrade, while a premium valuation and the OpenAI suit remain overhangs",tag:"AI · Big tech",dir:"mix",
+   facts:"Apple shares rallied to a fresh record near $327-333 in mid-July 2026, up roughly 20% year-to-date and lifting its market cap toward $5 trillion; HSBC upgraded Apple to Buy from Hold, calling it an operational turning point (TipRanks, 24/7 Wall St). Q3 FY2026 earnings are due July 30, 2026 with consensus EPS of $1.88 (+20% y/y). The bear case cited by 24/7 Wall St rests on a 39.67x valuation, memory-cost pressure on product margins, softer smartphone/PC demand, and the trade-secrets lawsuit Apple filed against OpenAI in July.",
+   exposure:[{tk:"AAPL",dir:"~",note:"Record highs and an HSBC upgrade are running against a rich valuation and unresolved OpenAI litigation heading into the July 30 print"}],
+   watch:"Q3 FY2026 earnings July 30, any developments in the OpenAI lawsuit, September foldable iPhone launch",
+   srcs:[{s:"TipRanks",u:"https://www.tipranks.com/news/why-apple-aapl-stock-hit-a-new-record-high-today-july-13-2026"},{s:"24/7 Wall St",u:"https://247wallst.com/investing/2026/07/15/apple-is-up-20-in-2026-what-will-it-take-for-aapl-stock-to-hit-350/"}]},
+  {theme:"Nvidia gets a fresh AI-demand tailwind as China export licenses resume and a delay claim is refuted",tag:"AI · Semiconductors",dir:"pos",
+   facts:"Nvidia shares traded near $211-212 in mid-July 2026, with Goldman Sachs calling its forward P/E of 21.7x 'compelling' relative to its five-year average of 72x (TradingKey). Shares gained over 1% on July 7 after Nvidia refuted claims that its Kyber NVL144 AI system would be delayed until 2028 (Motley Fool). The US began issuing licenses for Nvidia to resume H20 chip sales to China, reopening a previously blocked market; the company has returned roughly $20bn to shareholders via dividends/buybacks and authorized a further $80bn buyback.",
+   exposure:[{tk:"NVDA",dir:"+",note:"China export-license reopening and the Kyber delay denial are concrete positive developments this month"}],
+   watch:"Pace of China H20 shipments under the new licenses, Blackwell/Vera Rubin rollout progress, any further export-policy reversals",
+   srcs:[{s:"TradingKey",u:"https://www.tradingkey.com/analysis/stocks/us-stocks/262015350-nvidia-nvda-stock-forecast-july-2026-kyber-denial-goldman-tradingkey"},{s:"Motley Fool",u:"https://www.fool.com/investing/2026/07/17/great-news-for-nvidia-stock-investors/"}]},
+  {theme:"Consumer discretionary diverges: Duolingo and Amer Sports get upgrades and raised guidance while Lululemon cuts its outlook",tag:"Consumer",dir:"mix",
+   facts:"Jefferies raised its Duolingo price target to $125 from $95 (Hold) and Wedbush initiated Neutral at $139, citing AI as a growth driver; the stock rose 3.81% on July 17 (StocksToTrade). Amer Sports' Q1 2026 revenue surged 32% y/y, led by 45% growth in Salomon direct-to-consumer sales at 60% gross margin, and management raised full-year guidance to 20-22% revenue growth (Seeking Alpha). In contrast, Lululemon is down 43% year-to-date after Truist downgraded it to Sell (target cut to $94 from $115) and management lowered FY2026 revenue guidance to $11.0bn-$11.15bn from $11.35bn-$11.5bn on weak consumer demand and margin pressure.",
+   exposure:[{tk:"DUOL",dir:"+",note:"Two analyst price-target increases this month on AI-driven growth thesis"},{tk:"AS",dir:"+",note:"Q1 beat with raised full-year guidance; DTC and Salomon momentum cited as the driver"},{tk:"LULU",dir:"-",note:"Guidance cut and a fresh Sell downgrade following a 43% YTD decline"}],
+   watch:"Duolingo's Q2 2026 print, Lululemon's Q2 results against the newly lowered guidance, whether Amer Sports sustains its DTC growth rate",
+   srcs:[{s:"StocksToTrade",u:"https://stockstotrade.com/news/duolingoinc-duol-news-2026_07_17/"},{s:"Seeking Alpha",u:"https://seekingalpha.com/article/4922128-amer-sports-stock-picking-up-substantial-momentum-ahead-of-rivals"},{s:"Yahoo Finance",u:"https://finance.yahoo.com/markets/stocks/articles/lululemon-stock-down-43-2026-191941864.html"}]},
+  {theme:"Broad index holdings caught between cooling US inflation and an oil spike tied to US-Iran tensions",tag:"Macro · Broad market",dir:"mix",
+   facts:"June 2026 US CPI rose 3.5% y/y, below the 3.8% expected, as energy prices pulled back — a near-term positive for rate-cut expectations (24/7 Wall St). The same week, SPY and QQQ closed lower as fresh US-Iran developments sent oil prices higher, and AI-related chip stocks added further pressure. SPY's top holdings remain concentrated in Nvidia (7.64%) and Apple (7.63%) as of mid-July, meaning single-stock AI-sector swings move the broader index funds directly.",
+   exposure:[{tk:"SPY",dir:"~",note:"Cooler CPI supports rate-cut hopes, but the oil-driven risk-off move and heavy Nvidia/Apple weighting cut the other way"},{tk:"VUAA",dir:"~",note:"Same S&P 500 exposure and macro drivers as SPY"},{tk:"VWRA",dir:"~",note:"Global diversification dilutes the US-specific CPI/oil exposure relative to SPY and VUAA"}],
+   watch:"July CPI print, further escalation or de-escalation in the Iran-linked oil-price shock, Fed commentary on the rate path",
+   srcs:[{s:"24/7 Wall St",u:"https://247wallst.com/investing/2026/07/14/stock-market-live-july-14-2026-sp-500-spy-regaining-lost-ground-on-inflation-report/"},{s:"StockAnalysis.com",u:"https://stockanalysis.com/etf/spy/"}]}
+];
+/* DATA-END */
+
+const fmt=(x,dec=2)=>x.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+const sg=x=>x>=0?'+':'';
+const cls=x=>x>=0?'green':'red';
+const consBadge=c=>{const l=(c||'').toLowerCase();const k=l.includes('buy')||l.includes('overweight')?'b-buy':l.includes('sell')?'b-sell':'b-hold';return `<span class="badge ${k}">${c||'—'}</span>`;};
+
+// ===== PORTFOLIO =====
+function pstats(list){const value=list.reduce((a,h)=>a+h.vm,0);const pnl=list.reduce((a,h)=>a+h.pm,0);const inv=list.filter(h=>!h.cash).reduce((a,h)=>a+(h.vm-h.pm),0);return{value,pnl,ret:inv?pnl/inv*100:0};}
+const all=pstats(holdings),my=pstats(holdings.filter(h=>h.mkt==="MY")),us=pstats(holdings.filter(h=>h.mkt==="US"));
+const TOTAL=all.value;
+document.getElementById('asof').textContent="Last refreshed "+new Date(asOf).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})+" · prices FMP, FX Alpha Vantage · return on invested cost (excl. cash)";
+document.getElementById('tv').textContent="RM "+fmt(TOTAL);
+const peEl=document.getElementById('pnl');peEl.className="v mid "+cls(all.pnl);peEl.textContent=sg(all.pnl)+"RM "+fmt(Math.abs(all.pnl))+"  ("+sg(all.ret)+all.ret.toFixed(2)+"%)";
+document.getElementById('fx').textContent=FX_USD.toFixed(4);
+function mcard(flag,st){return `<div class="mcard"><div class="flag">${flag}</div><div class="row"><span class="k">Market value</span><span class="big">RM ${fmt(st.value)}</span></div><div class="row"><span class="k">Unrealized P&L</span><span class="${cls(st.pnl)}">${sg(st.pnl)}RM ${fmt(Math.abs(st.pnl))} (${sg(st.ret)}${st.ret.toFixed(2)}%)</span></div><div class="row"><span class="k">% of portfolio</span><span>${(st.value/TOTAL*100).toFixed(1)}%</span></div></div>`;}
+document.getElementById('msum').innerHTML=mcard("🇲🇾 Malaysia — Bursa (MYR)",my)+mcard("🇺🇸 US & Global (USD)",us);
+function buildTable(id,mkt,st){const rows=holdings.filter(h=>h.mkt===mkt).sort((a,b)=>(a.cash-b.cash)||(b.vm-a.vm));let html=`<thead><tr><th class="l">Holding</th><th>Shares</th><th>Price</th><th>Value (native)</th><th>Value (MYR)</th><th>P&L (MYR)</th><th>Day %</th><th>% Port</th></tr></thead><tbody>`;for(const h of rows){html+=`<tr class="${h.cash?'cash':''}"><td class="l"><div class="nm">${h.n}</div><div class="tk">${h.t}</div></td><td>${fmt(h.s,h.s%1===0?0:4)}</td><td>${fmt(h.p)} <span class="tk">${h.cur}</span></td><td>${fmt(h.vn)}</td><td>${fmt(h.vm)}</td><td class="${h.cash?'':cls(h.pm)}">${h.cash?'—':sg(h.pm)+fmt(Math.abs(h.pm))}</td><td class="${h.cash?'':cls(h.d)}">${h.cash?'—':sg(h.d)+h.d.toFixed(2)+'%'}</td><td>${(h.vm/TOTAL*100).toFixed(1)}%</td></tr>`;}html+=`<tr class="sub"><td class="l">Subtotal <span class="k">${mkt==="MY"?"Malaysia":"US & Global"}</span></td><td></td><td></td><td></td><td>${fmt(st.value)}</td><td class="${cls(st.pnl)}">${sg(st.pnl)}${fmt(Math.abs(st.pnl))}</td><td></td><td>${(st.value/TOTAL*100).toFixed(1)}%</td></tr></tbody>`;document.getElementById(id).innerHTML=html;}
+buildTable('tbl-MY','MY',my);buildTable('tbl-US','US',us);
+const palette=['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#39c5cf'];
+function doughnut(id,obj){new Chart(document.getElementById(id),{type:'doughnut',data:{labels:Object.keys(obj),datasets:[{data:Object.values(obj),backgroundColor:palette,borderColor:'#161b22',borderWidth:2}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#e6edf3',boxWidth:12,padding:12,font:{size:12}}},tooltip:{callbacks:{label:c=>` ${c.label}: RM ${fmt(c.parsed)} (${(c.parsed/TOTAL*100).toFixed(1)}%)`}}},cutout:'58%'}});}
+doughnut('mkt',{"Malaysia (MYR)":my.value,"US & Global (USD)":us.value});
+const eqUS=holdings.filter(h=>h.mkt==="US"&&!h.cash&&!["SPY","VUAA","VWRA"].includes(h.t)).reduce((a,h)=>a+h.vm,0);
+const etf=holdings.filter(h=>["SPY","VUAA","VWRA"].includes(h.t)).reduce((a,h)=>a+h.vm,0);
+const cashv=holdings.filter(h=>h.cash).reduce((a,h)=>a+h.vm,0);
+doughnut('typ',{"Malaysia equities":my.value,"Global/US ETFs":etf,"US equities":eqUS,"Cash":cashv});
+const nc=holdings.filter(h=>!h.cash);
+const mvRow=h=>`<div class="mv"><span><span class="nm" style="font-size:13px">${h.t}</span> <span class="tk">RM ${fmt(h.vm)}</span></span><span class="${cls(h.d)}" style="font-weight:650">${sg(h.d)}${h.d.toFixed(2)}%</span></div>`;
+document.getElementById('gain').innerHTML=[...nc].sort((a,b)=>b.d-a.d).slice(0,3).map(mvRow).join('');
+document.getElementById('lose').innerHTML=[...nc].sort((a,b)=>a.d-b.d).slice(0,3).map(mvRow).join('');
+if(history.length<3){document.getElementById('histbox').innerHTML='<div class="placeholder">History will appear here after a few daily runs</div>';}else{new Chart(document.getElementById('hist'),{type:'line',data:{labels:history.map(x=>x.date),datasets:[{label:'Portfolio (MYR)',data:history.map(x=>x.value),borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,.12)',fill:true,tension:.25,pointRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#20262e'}},y:{ticks:{color:'#8b949e',callback:v=>'RM '+(v/1000).toFixed(0)+'k'},grid:{color:'#20262e'}}}}});}
+// ===== DIVIDENDS (Malaysia) =====
+function renderDivTable(){
+  const yldOf=(amt,cb)=>(amt!=null&&cb)?(amt/cb*100):null;
+  const yldCell=v=>v!=null?v.toFixed(2)+'%':'—';
+  let html=`<thead><tr><th class="l">Holding</th><th>Paid this year</th><th class="l">Next ex-div</th><th>2026 YTD yield</th><th>2025 yield</th><th>2024 yield</th><th>2023 yield</th><th>2022 yield</th></tr></thead><tbody>`;
+  for(const dv of dividends){
+    html+=`<tr><td class="l"><div class="nm">${dv.n}</div><div class="tk">${dv.t}</div></td><td>${dv.timesThisYear}</td><td class="l">${dv.nextEx}${dv.nextExConfirmed===false?' <span class="tk">est.</span>':''}</td><td>${yldCell(yldOf(dv.ytd,dv.costBasis))}</td><td>${yldCell(yldOf(dv.y2025,dv.costBasis))}</td><td>${yldCell(yldOf(dv.y2024,dv.costBasis))}</td><td>${yldCell(yldOf(dv.y2023,dv.costBasis))}</td><td>${yldCell(yldOf(dv.y2022,dv.costBasis))}</td></tr>`;
+  }
+  html+=`</tbody>`;
+  document.getElementById('tbl-div').innerHTML=html;
+}
+renderDivTable();
+
+// ===== CATALYSTS =====
+const dirLabel={pos:"Positive",neg:"Negative",mix:"Mixed"};
+document.getElementById('catalysts').innerHTML=catalysts.map(c=>{
+  const dcol={"+":"green","-":"red","~":"amber"},dsym={"+":"▲","-":"▼","~":"◆"};
+  const chips=c.exposure.map(e=>{const h=holdings.find(x=>x.t===e.tk);const label=h?(h.mkt==="MY"?h.n:e.tk):e.tk;return `<span class="chip" title="${e.note}"><span class="d ${dcol[e.dir]}">${dsym[e.dir]}</span> ${label} <span class="tk">${e.tk}</span></span>`;}).join('');
+  const srcs=c.srcs.map(s=>`<a href="${s.u}" target="_blank" rel="noopener">${s.s} ↗</a>`).join('');
+  return `<div class="cat"><div class="ctag">${c.tag}</div><h3>${c.theme}</h3><span class="dirbadge dir-${c.dir}">${dirLabel[c.dir]}</span><div class="facts" style="margin-top:8px">${c.facts}</div><div class="exp">${chips}</div><div class="watch"><b>Watch:</b> ${c.watch}</div><div class="srcs">${srcs}</div></div>`;
+}).join('');
+</script>
+</body>
+</html>
