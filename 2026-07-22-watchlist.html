@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchlist — MYR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#2a3038;--text:#e6edf3;--muted:#8b949e;--green:#3fb950;--red:#f85149;--accent:#58a6ff;--amber:#d29922}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;padding:0 26px 40px;max-width:1180px;margin:0 auto}
+  h1{font-size:20px;font-weight:600}
+  h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:30px 0 12px}
+  .sub{color:var(--muted);font-size:12.5px;margin:2px 0 4px}
+  .green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+  .topbar{position:sticky;top:0;background:var(--bg);padding:22px 0 12px;z-index:10;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:6px 16px 12px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:right;white-space:nowrap}
+  th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border)}
+  td{border-bottom:1px solid #20262e}
+  th.l,td.l{text-align:left}
+  .nm{font-weight:600;font-size:14px}.tk{color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.02em}
+  .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:6px}
+  .mcard{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px 16px}
+  .mcard .flag{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+  .mcard .v{font-size:22px;font-weight:700}
+  .mcard .chg{font-size:13px;font-weight:600;margin-top:2px}
+  .mcard .range{font-size:11px;color:var(--muted);margin-top:6px}
+  .chartbox{position:relative;height:170px;margin-top:8px}
+  .chartbox.tall{height:220px}
+  .bar{height:6px;border-radius:4px;background:#20262e;overflow:hidden;margin-top:4px}.bar>span{display:block;height:100%}
+  .badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:0;vertical-align:middle;font-weight:600}
+  .b-buy{background:rgba(63,185,80,.15);color:var(--green)}.b-hold{background:rgba(210,153,34,.15);color:var(--amber)}.b-sell{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-web{background:#21262d;color:var(--muted);font-weight:500}
+  .b-watch{background:rgba(210,153,34,.18);color:var(--amber);font-weight:600}
+  .pill{display:inline-block;background:#21262d;border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--muted);margin-left:6px;vertical-align:middle}
+  .cat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:14px}
+  .cat h3{font-size:15px;margin-bottom:2px;display:inline-block}
+  .cat .ctag{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .cat .facts{font-size:13px;color:#c9d1d9;margin-bottom:10px}
+  .exp{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px}
+  .chip .d{font-weight:700}.chip.held{border-color:#3b4048}
+  .heldtag{font-size:9px;background:#21262d;color:var(--muted);padding:0 4px;border-radius:4px;margin-left:3px}
+  .cat .watch{font-size:12px;color:var(--muted);border-top:1px solid #20262e;padding-top:8px}
+  .cat .srcs{margin-top:6px;font-size:11.5px}.cat .srcs a{color:var(--accent);text-decoration:none;margin-right:12px}
+  .disc{font-size:11.5px;color:var(--muted);font-style:italic;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+  .dirbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+  .dir-pos{background:rgba(63,185,80,.15);color:var(--green)}
+  .dir-neg{background:rgba(248,81,73,.15);color:var(--red)}
+  .dir-mix{background:rgba(210,153,34,.15);color:var(--amber)}
+  @media(max-width:900px){.mgrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.mgrid{grid-template-columns:1fr}body{padding:0 14px 30px}}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Watchlist <span class="pill">Base: MYR</span></h1>
+  </div>
+  <div class="sub" id="asof"></div>
+
+  <h2>Market Pulse</h2>
+  <div class="mgrid" id="mpulse"></div>
+  <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px">
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">S&amp;P 500 — last ~4 weeks</div><div class="chartbox"><canvas id="chSpx"></canvas></div></div>
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">USD/MYR — last ~5 weeks</div><div class="chartbox"><canvas id="chFx"></canvas></div></div>
+  </div>
+  <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px">
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">Brent crude (USD/bbl) — last ~13 weeks</div><div class="chartbox"><canvas id="chBrent"></canvas></div></div>
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">Bitcoin (USD) — last ~4 weeks</div><div class="chartbox"><canvas id="chBtc"></canvas></div></div>
+  </div>
+  <div class="disc">Market data: S&amp;P 500, World (VT), Brent, gold and Bitcoin via FMP/Alpha Vantage live quotes; FBM KLCI via web search (FMP index/forex endpoints are gated on the current plan tier). USD/MYR spot and history via Alpha Vantage.</div>
+
+  <h2>Watchlist — US Market</h2>
+  <div class="disc" id="wlnote"></div>
+  <div class="panel"><div style="overflow-x:auto"><table id="tbl-wl-us"></table></div></div>
+
+  <h2>Watchlist — Malaysia (Bursa)</h2>
+  <div class="panel"><div style="overflow-x:auto"><table id="tbl-wl-my"></table></div></div>
+
+  <h2>Watchlist — Singapore (SGX)</h2>
+  <div class="disc" id="wlnote-sg"></div>
+  <div class="panel"><div style="overflow-x:auto"><table id="tbl-wl-sg"></table></div></div>
+
+  <h2>Catalyst Radar — positive / negative reads from today's news</h2>
+  <div class="disc">Directional tags are analysis/speculation, not recommendations — they flag exposure and what to watch, so you decide. Facts are sourced; "HELD" marks a position already in your portfolio. "Watch-only" marks names flagged as monitor-not-chase in the original screen (MU, NEM).</div>
+  <div id="catalysts"></div>
+
+<script>
+/* DATA-START — the daily task replaces everything between DATA-START and DATA-END. Do not edit markup/CSS/render-logic outside these markers. */
+const asOf = "2026-07-21T09:05:00Z";
+
+// ===== MARKET PULSE =====
+const spx = {v:7443.28, chg:-0.19322, lo:6212.69, hi:7620.90};
+const world = {v:154.29, chg:-0.31658, lo:127.79, hi:159.41, name:"Vanguard Total World (VT)"};
+const usdmyr = {v:4.0885, chg:null, lo52:3.885, hi52:4.154};
+const brent = {v:88.56, chg:-0.40};
+const gold = {v:4065.78, chg:null};
+const klci = {v:1725.62, chg:0.19};
+const btc = {v:66163.40, chg:1.45567, lo:57747.77, hi:126198.07};
+
+const spxHist = [["06-22",7472.78],["06-23",7365.45],["06-24",7358.21],["06-25",7357.48],["06-26",7354.03],["06-29",7440.43],["06-30",7499.36],["07-01",7483.23],["07-02",7483.24],["07-06",7537.43],["07-07",7503.85],["07-08",7482.71],["07-09",7543.64],["07-10",7575.39],["07-13",7515.34],["07-14",7543.59],["07-15",7572.40],["07-16",7533.77],["07-17",7457.69],["07-20",7443.28]];
+const fxHist = [["06-15",4.048],["06-16",4.065],["06-18",4.115],["06-19",4.134],["06-22",4.146],["06-23",4.138],["06-24",4.135],["06-25",4.115],["06-26",4.085],["06-29",4.067],["06-30",4.082],["07-01",4.092],["07-02",4.077],["07-03",4.067],["07-06",4.082],["07-07",4.067],["07-08",4.074],["07-09",4.074],["07-10",4.067],["07-13",4.068],["07-14",4.076],["07-15",4.076],["07-16",4.070],["07-17",4.090],["07-20",4.090]];
+const brentHist = [["04-24",109.62],["05-01",119.63],["05-08",105.88],["05-15",110.53],["05-22",110.61],["05-29",97.05],["06-05",98.95],["06-12",93.76],["06-19",81.00],["06-26",73.63],["07-03",69.70],["07-10",73.33],["07-17",88.10],["07-21",88.56]];
+const btcHist = [["06-24",60983.13],["06-25",59703.65],["06-26",60002.53],["06-27",59934.84],["06-28",59474.01],["06-29",60162.73],["06-30",58523.93],["07-01",59961.45],["07-02",61484.02],["07-03",62520.22],["07-04",63086.45],["07-05",63580.44],["07-06",64001.84],["07-07",63323.27],["07-08",62237.70],["07-09",63175.25],["07-10",64128.49],["07-11",63773.04],["07-12",63740.32],["07-13",62264.94],["07-14",64988.64],["07-15",64716.63],["07-16",63770.60],["07-17",63894.00],["07-18",64796.36],["07-19",64794.52],["07-20",64728.47],["07-21",66163.40]];
+
+const wlNote = "Tuesday afternoon MYT (~5pm), pre-US-open refresh. Malaysia/Singapore are live: FBM KLCI opened +3.33pts to 1,725.62, recovering from Monday's -0.53% close to 1,722.29 as banks 'find their footing' per The Star, after Monday's weakness was driven by Public Bank. TNB (+1.40%) and YTL Power (+1.18%) lead the MY book higher; Gamuda +0.48%; Telekom Malaysia -0.52%; Public Bank flat. Singapore's five names are all firmer to flat (CLAR +0.40%, CICT +0.41%, KDCREIT flat, ST Engineering +0.19%, Keppel Ltd +0.99%). Resintech Berhad (7232) again returned nothing from FMP's batch-quote; carrying forward a web-sourced RM0.435 print (July 10, stale, 0 analyst coverage) with day-change unknown — flagged low-confidence. US names are Monday July 20's closing prints (Wall Street hasn't opened yet) — FMP fundamentals refreshed for XOM/MSFT/BABA/TSM/GOOGL; all other names (all MY, all SG, plus SHEL/CHA/VRT/AVGO/ANET/MU/SLB/TCEHY/JD/TCOM/LLY/NEM/RTX — 24 of 29 tickers) are web-sourced this run, marked accordingly. Big Monday moves: Chinese ADRs rallied broadly (BABA +4.67%, TCOM +4.10%, TCEHY +3.77%, JD +3.31%); memory/AI hardware rebounded after last week's rout (MU +1.94%, AVGO +1.98%); GOOGL +1.51% on a new in-house AI-chip report ahead of Wednesday's earnings; MSFT +2.15% despite a second securities class action; LLY -2.74% and SLB/SHEL both softer. Gold spot (Alpha Vantage) at $4,065.78. Bitcoin live at $66,163 (+1.46%). Brent at $88.56 (web-sourced spot; Alpha Vantage's weekly series still lags at $73.33 as of July 10) after the Iran conflict pushed oil above $90 over the weekend per Semafor.";
+
+const watchlist = [
+  {t:"5398",n:"Gamuda",mkt:"MY",cur:"MYR",p:4.23,d:0.47506,lo:3.70,hi:5.80,cons:null,buy:null,hold:null,sell:null,tgt:6.38,pe:22.4,peg:null,yld:null,src:"web",watch:false,themes:["AI/DC","Construction"]},
+  {t:"5347",n:"Tenaga Nasional (TNB)",mkt:"MY",cur:"MYR",p:14.50,d:1.3986,lo:12.50,hi:14.90,cons:"Strong Buy",buy:19,hold:2,sell:0,tgt:16.30,pe:17.7,peg:null,yld:3.71,src:"web",watch:false,themes:["AI/Power","Oil costs"]},
+  {t:"6742",n:"YTL Power",mkt:"MY",cur:"MYR",p:4.29,d:1.17925,lo:2.51,hi:4.50,cons:"Strong Buy",buy:11,hold:3,sell:0,tgt:4.62,pe:15.8,peg:null,yld:null,src:"web",watch:false,themes:["AI/DC power","Data centres"]},
+  {t:"1295",n:"Public Bank",mkt:"MY",cur:"MYR",p:5.19,d:0.0,lo:4.18,hi:5.28,cons:"Buy",buy:13,hold:5,sell:0,tgt:5.44,pe:13.89,peg:null,yld:4.88,src:"web",watch:false,themes:["MY banking"]},
+  {t:"7232",n:"Resintech Berhad",mkt:"MY",cur:"MYR",p:0.435,d:0.0,lo:0.41,hi:0.66,cons:null,buy:null,hold:null,sell:null,tgt:null,pe:null,peg:null,yld:null,src:"web",watch:false,themes:["Industrial products","Resins/specialty chemicals"]},
+  {t:"4863",n:"Telekom Malaysia",mkt:"MY",cur:"MYR",p:7.65,d:-0.52016,lo:6.69,hi:8.30,cons:"Buy",buy:15,hold:4,sell:2,tgt:7.78,pe:15.9,peg:null,yld:null,src:"web",watch:false,themes:["Telco","Digital infrastructure"]},
+  {t:"A17U.SI",n:"CapitaLand Ascendas REIT (CLAR)",mkt:"SG",cur:"SGD",p:2.50,d:0.40161,lo:2.42,hi:2.92,cons:"Strong Buy",buy:15,hold:null,sell:0,tgt:3.11,pe:null,peg:null,yld:6.0,src:"web",watch:false,themes:["Industrial/logistics REIT","Diversified","Strongest sponsor"]},
+  {t:"C38U.SI",n:"CapitaLand Integrated Commercial Trust (CICT)",mkt:"SG",cur:"SGD",p:2.46,d:0.40816,lo:2.17,hi:2.57,cons:"Buy",buy:12,hold:null,sell:0,tgt:2.60,pe:null,peg:null,yld:5.0,src:"web",watch:false,themes:["Retail/commercial anchor","Income stability"]},
+  {t:"AJBU.SI",n:"Keppel DC REIT (KDCREIT)",mkt:"SG",cur:"SGD",p:2.32,d:0.0,lo:2.15,hi:2.44,cons:"Strong Buy",buy:14,hold:null,sell:0,tgt:2.629,pe:null,peg:null,yld:4.55,src:"web",watch:false,themes:["Data centre REIT","Growth optionality","Tech-adjacent"]},
+  {t:"S63.SI",n:"ST Engineering",mkt:"SG",cur:"SGD",p:10.41,d:0.19249,lo:7.54,hi:11.63,cons:"Buy",buy:10,hold:4,sell:1,tgt:11.58,pe:33.6,peg:null,yld:null,src:"web",watch:false,themes:["Defense/Aerospace","Singapore blue-chip"]},
+  {t:"BN4.SI",n:"Keppel Ltd",mkt:"SG",cur:"SGD",p:11.27,d:0.98566,lo:8.06,hi:13.25,cons:"Strong Buy",buy:11,hold:0,sell:1,tgt:13.08,pe:20.9,peg:null,yld:null,src:"web",watch:false,themes:["Infrastructure/Energy transition","Asset management"]},
+  {t:"XOM",n:"Exxon Mobil",mkt:"US",cur:"USD",p:148.36,d:0.67861,lo:105.53,hi:176.41,cons:"Hold",buy:24,hold:26,sell:5,tgt:169.69,pe:25.1,peg:null,yld:2.75,src:"fmp",watch:false,themes:["Oil & gas","Geopolitics"]},
+  {t:"SHEL",n:"Shell",mkt:"US",cur:"USD",p:86.20,d:-1.28264,lo:68.625,hi:94.90,cons:"Buy",buy:6,hold:4,sell:0,tgt:108.73,pe:11.37,peg:null,yld:3.5,src:"web",watch:false,themes:["Oil & gas","LNG"]},
+  {t:"SLB",n:"Schlumberger",mkt:"US",cur:"USD",p:46.39,d:-1.27687,lo:31.64,hi:58.82,cons:"Buy",buy:25,hold:2,sell:2,tgt:63.13,pe:20.5,peg:null,yld:2.54,src:"web",watch:false,themes:["Oil & gas","Oilfield svcs"]},
+  {t:"MSFT",n:"Microsoft",mkt:"US",cur:"USD",p:402.29,d:2.15073,lo:349.20,hi:555.45,cons:"Buy",buy:66,hold:16,sell:0,tgt:545.27,pe:23.87,peg:0.80,yld:0.88,src:"fmp",watch:false,themes:["AI","Cloud"]},
+  {t:"GOOGL",n:"Alphabet",mkt:"US",cur:"USD",p:351.99,d:1.50532,lo:186.15,hi:408.61,cons:"Buy",buy:71,hold:11,sell:1,tgt:419.14,pe:26.59,peg:0.58,yld:0.24,src:"fmp",watch:false,themes:["AI","Cloud"]},
+  {t:"AVGO",n:"Broadcom",mkt:"US",cur:"USD",p:378.16,d:1.97802,lo:273.00,hi:495.0,cons:"Strong Buy",buy:23,hold:3,sell:0,tgt:523.73,pe:61.7,peg:null,yld:null,src:"web",watch:false,themes:["AI silicon","Networking"]},
+  {t:"ANET",n:"Arista Networks",mkt:"US",cur:"USD",p:169.35,d:0.43888,lo:106.987,hi:189.817,cons:"Strong Buy",buy:29,hold:1,sell:0,tgt:190.09,pe:55.0,peg:null,yld:null,src:"web",watch:false,themes:["AI networking"]},
+  {t:"VRT",n:"Vertiv",mkt:"US",cur:"USD",p:291.67,d:0.72869,lo:118.70,hi:379.935,cons:"Strong Buy",buy:27,hold:null,sell:null,tgt:388.67,pe:73.7,peg:null,yld:null,src:"web",watch:false,themes:["DC power & cooling"]},
+  {t:"TSM",n:"Taiwan Semiconductor",mkt:"US",cur:"USD",p:402.30,d:0.98652,lo:223.70,hi:479.0,cons:"Buy",buy:18,hold:7,sell:0,tgt:586.0,pe:32.4,peg:null,yld:0.91,src:"fmp",watch:false,themes:["AI foundry","Taiwan risk"]},
+  {t:"MU",n:"Micron",mkt:"US",cur:"USD",p:865.46,d:1.94476,lo:103.38,hi:1255.0,cons:"Strong Buy",buy:40,hold:5,sell:0,tgt:1486.0,pe:19.3,peg:null,yld:null,src:"web",watch:true,themes:["HBM memory"]},
+  {t:"BABA",n:"Alibaba",mkt:"US",cur:"USD",p:120.34,d:4.67078,lo:91.99,hi:192.67,cons:"Buy",buy:51,hold:7,sell:1,tgt:185.0,pe:17.76,peg:null,yld:0.88,src:"fmp",watch:false,themes:["China consumer","AI/Cloud"]},
+  {t:"TCEHY",n:"Tencent",mkt:"US",cur:"USD",p:61.28,d:3.76767,lo:52.84,hi:87.68,cons:"Strong Buy",buy:43,hold:2,sell:1,tgt:106.0,pe:16.62,peg:null,yld:null,src:"web",watch:false,themes:["China consumer","Gaming/fintech"]},
+  {t:"JD",n:"JD.com",mkt:"US",cur:"USD",p:30.60,d:3.30858,lo:24.508,hi:36.86,cons:"Strong Buy",buy:9,hold:1,sell:0,tgt:39.56,pe:21.78,peg:null,yld:null,src:"web",watch:false,themes:["China consumer","E-commerce"]},
+  {t:"TCOM",n:"Trip.com",mkt:"US",cur:"USD",p:44.19,d:4.09894,lo:38.04,hi:78.99,cons:"Strong Buy",buy:41,hold:6,sell:0,tgt:60.69,pe:6.44,peg:null,yld:null,src:"web",watch:false,themes:["China consumer","Travel"]},
+  {t:"CHA",n:"Chagee",mkt:"US",cur:"USD",p:11.58,d:2.47787,lo:8.98,hi:25.85,cons:"Buy",buy:7,hold:2,sell:0,tgt:16.76,pe:10.92,peg:null,yld:0.0,src:"web",watch:false,themes:["China consumer","F&B"]},
+  {t:"LLY",n:"Eli Lilly",mkt:"US",cur:"USD",p:1146.85,d:-2.73596,lo:623.78,hi:1249.45,cons:"Buy",buy:24,hold:5,sell:2,tgt:1236.52,pe:43.19,peg:null,yld:null,src:"web",watch:false,themes:["Healthcare","GLP-1"]},
+  {t:"NEM",n:"Newmont",mkt:"US",cur:"USD",p:89.20,d:-0.55741,lo:58.97,hi:134.88,cons:"Buy",buy:25,hold:5,sell:0,tgt:144.15,pe:12.08,peg:null,yld:null,src:"web",watch:true,themes:["Precious metals","Gold"]},
+  {t:"RTX",n:"RTX Corp",mkt:"US",cur:"USD",p:194.44,d:0.4806,lo:143.56,hi:214.50,cons:"Buy",buy:13,hold:7,sell:2,tgt:210.71,pe:32.7,peg:null,yld:null,src:"web",watch:false,themes:["Defense","Geopolitics"]}
+];
+
+const catalysts = [
+  {theme:"Iran conflict drives Brent back near $88-90 as Houthis declare a 'maritime embargo'; Trump adds a fresh 50% tariff on Canadian goods", tag:"Energy · Geopolitics", dir:"mix",
+   facts:"Brent crude trades near $88.56/bbl (-0.4% today), still well above the $69-74 range seen in late June/early July. Semafor Flagship's July 20 edition ('Only terrible choices') reported the renewed Iran conflict drove oil above $90 over the weekend. The July 21 edition ('Trump's new Canada tariffs') adds that Houthi forces have declared a 'maritime embargo' affecting shipping near Bab el-Mandeb, and that the US has separately imposed a fresh 50% tariff on several Canadian goods — a distinct trade-policy escalation layered on top of the energy story. Alpha Vantage's own weekly Brent series still lags (last clean print 2026-07-10 at $73.33), so the chart's final two points are web-sourced spot prices rather than settled weekly closes.",
+   exposure:[{tk:"XOM",dir:"+",note:"Integrated major benefits from the elevated price regardless of near-term flow disruption"},{tk:"SHEL",dir:"+",note:"Upstream + LNG leverage to the higher price"},{tk:"SLB",dir:"~",note:"Oilfield services geared to upstream capex more than spot price swings"},{tk:"5347",dir:"~",note:"TNB — higher fuel/import costs, cushioned by the regulated ICPT pass-through mechanism"}],
+   watch:"Whether the Houthi embargo disrupts actual shipping volumes, any further US-Canada trade retaliation, whether Brent holds above $85 into the week",
+   srcs:[{s:"Semafor Flagship (Gmail newsletter, July 21)",u:"https://semafor.com"},{s:"Semafor Flagship (Gmail newsletter, July 20)",u:"https://semafor.com"}]},
+  {theme:"Memory and AI-hardware stocks rebound sharply Monday after last week's bear-market rout, led by Micron and Broadcom", tag:"AI · Semis", dir:"mix",
+   facts:"Micron jumped, SanDisk +6% and Western Digital +4% Monday as the broader semiconductor complex rebounded from a rough stretch, per 24/7 Wall Street, with Morgan Stanley's Joseph Moore calling last week's memory sell-off a 'strong entry point' (Motley Fool) and UBS's trading desk telling clients the sharpest momentum unwind may be nearing its end after hedge funds made 'one of the largest reductions in momentum and semiconductor exposure on record' (Invezz). TSMC separately told Nikkei Asia it plans to raise chipmaking prices by up to 10% in 2027 for both advanced and mature nodes (Reuters), even as TSM stock fell after its Q2 beat — Seeking Alpha's July 20 piece argues 'the market had the June number three days early and sold anyway,' pointing to a record capex guide and softer margin outlook as the real overhang. Meta's custom AI-silicon partnership with Broadcom was also flagged by Motley Fool as a potential H2 catalyst for AVGO.",
+   exposure:[{tk:"MU",dir:"+",note:"+1.94% Monday on the memory-sector rebound and Morgan Stanley's 'strong entry point' call"},{tk:"AVGO",dir:"+",note:"+1.98% Monday; Meta custom-silicon deal flagged as a possible H2 catalyst"},{tk:"TSM",dir:"~",note:"Stock fell despite a Q2 beat and a fresh 2027 pricing-power signal — a genuine fundamentals-vs-price disconnect"},{tk:"VRT",dir:"~",note:"Data-centre power/cooling adjacent to the same AI-hardware complex, no VRT-specific catalyst this run beyond a small bolt-on acquisition (Strategic Thermal Labs)"},{tk:"ANET",dir:"~",note:"Networking layer of the same AI-infra trade; no company-specific news this run"}],
+   watch:"Whether the rebound holds through the week, TSMC's 2027 price-increase read-through to margins, Meta/Broadcom silicon cadence",
+   srcs:[{s:"The Motley Fool",u:"https://www.fool.com/investing/2026/07/20/why-micron-stock-bounced-back-today/"},{s:"Reuters",u:"https://www.reuters.com/world/asia-pacific/tsmc-raise-chipmaking-prices-by-up-10-2027-nikkei-asia-reports-2026-07-21/"},{s:"Seeking Alpha",u:"https://seekingalpha.com/article/4923555-tsmc-beat-the-stock-fell-anyway-heres-what-got-priced-in"},{s:"Invezz",u:"https://invezz.com/news/2026/07/21/ubs-sees-broadcom-sandisk-oracle-stocks-rebounding-heres-why/"}]},
+  {theme:"Chinese ADRs rally broadly Monday — Alibaba, JD, Trip.com and Tencent all up 3-5% — though a fresh securities-fraud probe adds legal overhang for BABA", tag:"China · Consumer", dir:"mix",
+   facts:"Alibaba (+4.67%), JD.com (+3.31%), Trip.com (+4.10%) and Tencent (+3.77%) all rallied Monday. Alibaba's new Qwen 3.8 model is being cited as one of the most powerful open-source LLMs available (Schwab Network), and Jim Cramer reiterated on Mad Money that BABA remains 'the best way to play China' despite being down 18% YTD (24/7 Wall Street). Against that, Rosen Law Firm announced July 20 an investigation into potential securities claims against Alibaba over allegedly misleading business information (PRNewswire) — a fresh legal overhang on top of the stock's YTD underperformance. Schwab Network's Steven Dickens argued China's cheaper open-source AI models are not a competitive headwind for US hyperscalers, who remain the 'toll booths' of the AI trade. Tencent's Q2 print is rated Hold by Seeking Alpha at a $76 target ahead of results, citing unclear AI monetization.",
+   exposure:[{tk:"BABA",dir:"~",note:"Strong Monday rally set against a freshly announced securities-fraud investigation — genuinely two-sided"},{tk:"JD",dir:"+",note:"+3.31% Monday, no negative company-specific news this run"},{tk:"TCOM",dir:"+",note:"+4.10% Monday; institutional buying (Boston Common) offset by Cantillon trimming — net positive price action"},{tk:"TCEHY",dir:"~",note:"+3.77% Monday but Seeking Alpha's Q2 preview stays cautious (Hold, $76 target) on unclear AI monetization"},{tk:"CHA",dir:"~",note:"No company-specific news this run; broader China-consumer read-through only"}],
+   watch:"Rosen Law Firm's Alibaba investigation developments, Tencent's Q2 print, whether Monday's rally in China ADRs extends",
+   srcs:[{s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/rosen-law-firm-encourages-alibaba-group-holding-limited-investors-to-inquire-about-securities-class-action-investigation--baba-302830062.html"},{s:"24/7 Wall Street",u:"https://247wallst.com/investing/2026/07/20/jim-cramer-alibaba-is-still-the-best-way-to-play-china-despite-being-down-18-ytd/"},{s:"Seeking Alpha",u:"https://seekingalpha.com/article/4922975-tencent-2q26-preview-balanced-quarter-ahead-waiting-for-clearer-ai-monetization"}]},
+  {theme:"Alphabet gains on a new in-house 'Frozen v2' AI chip report ahead of Wednesday's Q2 earnings, even as securities-fraud investigations continue", tag:"GOOGL · AI", dir:"mix",
+   facts:"GOOGL rose 1.5% Monday after The Information reported Google is developing a new AI server chip, internally codenamed 'Frozen v2,' designed to permanently embed parts of Gemini's architecture into silicon (Invezz, TechCrunch). That's set against Q2 earnings due after the close Wednesday July 22 — Zacks and Barron's both flag it as a pivotal print for the broader tech rally, with Investopedia noting options markets are pricing in a sizable post-earnings move. At least three separate securities-fraud investigation announcements (Glancy Prongay Wolke & Rotter, Law Offices of Frank R. Cruz, Law Offices of Howard G. Smith) continued circulating July 20-21, all tied to the Gemini 3.5 Pro delay reported last week.",
+   exposure:[{tk:"GOOGL",dir:"~",note:"AI-chip optimism running directly against the delay/litigation overhang into Wednesday's print"}],
+   watch:"Wednesday July 22 Q2 earnings — capex guidance, Cloud growth durability, any Gemini 3.5 Pro update",
+   srcs:[{s:"TechCrunch",u:"https://techcrunch.com/2026/07/20/google-is-working-on-a-new-ai-chip-designed-to-make-gemini-more-efficient/"},{s:"Investopedia",u:"https://www.investopedia.com/here-is-how-much-google-parent-alphabet-stock-is-seen-moving-after-earnings-q2-fy2026-update-12019121"}]},
+  {theme:"Microsoft draws a second securities class action even as Morningstar calls the stock undervalued ahead of July 29 earnings", tag:"MSFT · Legal", dir:"mix",
+   facts:"Rosen Law Firm reminded MSFT investors July 20 of the August 11, 2026 lead-plaintiff deadline for its securities class action covering May 1, 2025-January 28, 2026 purchases (PRNewswire). Against that, Morningstar's Benzinga-reported note estimates MSFT trades at a 36% discount to its $600 fair-value target, one of the firm's most undervalued large-cap calls as of July 2026. Bank of America previewed the July 29 fiscal Q4 print (Proactive Investors), saying 'AI execution remains the central debate,' with Azure growth, AI infrastructure spend and Copilot adoption the focus.",
+   exposure:[{tk:"MSFT",dir:"~",note:"Litigation overhang unchanged against a constructive valuation call and AI-execution debate into next week's earnings"}],
+   watch:"July 29 fiscal Q4 earnings, Azure/AI capex guidance, further securities-litigation filings",
+   srcs:[{s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/msft-investors-have-opportunity-to-lead-microsoft-corporation-securities-fraud-lawsuit-302830036.html"},{s:"Benzinga",u:"https://www.benzinga.com/markets/tech/26/07/60561958/microsoft-is-a-value-stock-morningstar-says-yes-heres-why"}]},
+  {theme:"RTX's Pratt & Whitney and Raytheon units post a run of new order and product wins at the Farnborough Airshow", tag:"RTX · Defense", dir:"pos",
+   facts:"At the Farnborough International Airshow, RTX's Pratt & Whitney business confirmed a BOC Aviation order for up to 220 GTF engines (powering up to 110 Airbus A320neo-family aircraft), completed a design milestone for its new Valox 1500 engine for semi-autonomous platforms, and signed a near-five-year MRO agreement with Emerald Airlines for PW127M engines. Separately, Raytheon UK unveiled Red Kite, its first sovereign precision weapon fully designed and digitally engineered in the UK with British defence partners.",
+   exposure:[{tk:"RTX",dir:"+",note:"Multiple concrete order/product wins in the same week, though none individually large enough to move consensus estimates yet"}],
+   watch:"Whether any of these translate into disclosed contract values, further Farnborough announcements through the week",
+   srcs:[{s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/boc-aviation-confirms-order-for-up-to-220-engines-from-rtxs-pratt--whitney-302829345.html"},{s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/raytheon-uk-unveils-sovereign-digitally-engineered-precision-weapon-red-kite-302824539.html"}]},
+  {theme:"FBM KLCI opens Tuesday higher as banks 'find their footing' after Monday's banking-led decline", tag:"Malaysia · Banking", dir:"pos",
+   facts:"FBM KLCI closed Monday July 20 down 0.53% at 1,722.29 (The Edge Malaysia) on banking-sector weakness, then opened Tuesday July 21 up 3.33 points to 1,725.62 as The Star's headline points to banks 'finding their footing' — a partial reversal of Monday's softness. Public Bank was the specific drag Monday and sits flat Tuesday afternoon at RM5.19; Tenaga Nasional (+1.40%) and YTL Power (+1.18%) both firmed, tracking the broader index recovery.",
+   exposure:[{tk:"1295",dir:"~",note:"Flat after Monday's dip — the specific bank named in the prior session's weakness"},{tk:"5347",dir:"+",note:"+1.40%, leading the MY book's recovery"},{tk:"6742",dir:"+",note:"+1.18%, tracking the same recovery"},{tk:"5398",dir:"~",note:"+0.48%, broadly tracking the index"},{tk:"4863",dir:"~",note:"-0.52%, lagging the recovery"}],
+   watch:"Whether the bank-sector recovery holds through the full Tuesday session, any follow-through in SG's STI",
+   srcs:[{s:"The Star",u:"https://www.thestar.com.my/business/business-news/2026/07/21/fbm-klci-rebounds-as-banks-find-their-footing"},{s:"The Edge Malaysia",u:"https://theedgemalaysia.com/node/811369"}]}
+];
+
+const news = {
+  "TSM":[{h:"TSMC to raise chipmaking prices by up to 10% in 2027, Nikkei Asia reports",s:"Reuters",u:"https://www.reuters.com/world/asia-pacific/tsmc-raise-chipmaking-prices-by-up-10-2027-nikkei-asia-reports-2026-07-21/",d:"2026-07-21"},{h:"TSMC Beat, The Stock Fell Anyway: Here's What Got Priced In",s:"Seeking Alpha",u:"https://seekingalpha.com/article/4923555-tsmc-beat-the-stock-fell-anyway-heres-what-got-priced-in",d:"2026-07-20"}],
+  "MU":[{h:"Why Micron Stock Bounced Back Today",s:"The Motley Fool",u:"https://www.fool.com/investing/2026/07/20/why-micron-stock-bounced-back-today/",d:"2026-07-20"},{h:"Micron Jumps 5%, SanDisk Rises 6%, Western Digital Climbs 4% as Memory Stocks Rebound With Chips",s:"24/7 Wall Street",u:"https://247wallst.com/investing/2026/07/20/micron-jumps-5-sandisk-rises-6-western-digital-climbs-4-as-memory-stocks-rebound-with-chips/",d:"2026-07-20"}],
+  "GOOGL":[{h:"Google is working on a new AI chip designed to make Gemini more efficient",s:"TechCrunch",u:"https://techcrunch.com/2026/07/20/google-is-working-on-a-new-ai-chip-designed-to-make-gemini-more-efficient/",d:"2026-07-20"},{h:"Here's How Much Google Parent Alphabet's Stock Is Seen Moving After Earnings Wednesday",s:"Investopedia",u:"https://www.investopedia.com/here-is-how-much-google-parent-alphabet-stock-is-seen-moving-after-earnings-q2-fy2026-update-12019121",d:"2026-07-20"}],
+  "MSFT":[{h:"Prediction: Broadcom Stock Will Be Worth More Than Apple and Microsoft 10 Years From Now",s:"The Motley Fool",u:"https://www.fool.com/investing/2026/07/21/predict-broadcom-stock-worth-more-apple-microsoft/",d:"2026-07-21"},{h:"MSFT Investors Have Opportunity to Lead Microsoft Corporation Securities Fraud Lawsuit",s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/msft-investors-have-opportunity-to-lead-microsoft-corporation-securities-fraud-lawsuit-302830036.html",d:"2026-07-20"}],
+  "AVGO":[{h:"UBS sees Broadcom, Sandisk, Oracle stocks rebounding: here's why",s:"Invezz",u:"https://invezz.com/news/2026/07/21/ubs-sees-broadcom-sandisk-oracle-stocks-rebounding-heres-why/",d:"2026-07-21"},{h:"Broadcom Stock Has Jumped Just 7% in 2026. This Move by Meta Platforms Could Supercharge the Stock in the Second Half",s:"The Motley Fool",u:"https://www.fool.com/investing/2026/07/20/broadcom-stock-has-jumped-just-7-in-2026-this-move/",d:"2026-07-20"}],
+  "VRT":[{h:"BGL Announces the Sale of Strategic Thermal Labs to Vertiv",s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/bgl-announces-the-sale-of-strategic-thermal-labs-to-vertiv-302829757.html",d:"2026-07-20"},{h:"Jim Cramer Says Wait Before Buying the Dip on Vertiv: 'You'll Get A Better Price.'",s:"24/7 Wall Street",u:"https://247wallst.com/investing/2026/07/20/jim-cramer-says-wait-before-buying-the-dip-on-vertiv-youll-get-a-better-price/",d:"2026-07-20"}],
+  "RTX":[{h:"BOC Aviation confirms order for up to 220 engines from RTX's Pratt & Whitney",s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/boc-aviation-confirms-order-for-up-to-220-engines-from-rtxs-pratt--whitney-302829345.html",d:"2026-07-21"},{h:"Raytheon UK unveils sovereign, digitally engineered precision weapon Red Kite",s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/raytheon-uk-unveils-sovereign-digitally-engineered-precision-weapon-red-kite-302824539.html",d:"2026-07-20"}],
+  "BABA":[{h:"Rosen Law Firm Encourages Alibaba Group Holding Limited Investors to Inquire About Securities Class Action Investigation",s:"PRNewsWire",u:"https://www.prnewswire.com/news-releases/rosen-law-firm-encourages-alibaba-group-holding-limited-investors-to-inquire-about-securities-class-action-investigation--baba-302830062.html",d:"2026-07-20"},{h:"Jim Cramer: Alibaba Is 'Still the Best Way to Play China' Despite Being Down 18% YTD",s:"24/7 Wall Street",u:"https://247wallst.com/investing/2026/07/20/jim-cramer-alibaba-is-still-the-best-way-to-play-china-despite-being-down-18-ytd/",d:"2026-07-20"}],
+  "TCEHY":[{h:"Tencent Q2 2026 Preview: Balanced Quarter Ahead; Waiting For Clearer AI Monetization",s:"Seeking Alpha",u:"https://seekingalpha.com/article/4922975-tencent-2q26-preview-balanced-quarter-ahead-waiting-for-clearer-ai-monetization",d:"2026-07-17"}],
+  "JD":[{h:"Is Trending Stock JD.com, Inc. (JD) a Buy Now?",s:"Zacks",u:"https://www.zacks.com/stock/news/2956165/is-trending-stock-jd-com-inc-jd-a-buy-now",d:"2026-07-20"}],
+  "TCOM":[{h:"Boston Common Asset Management LLC Acquires 35,970 Shares of Trip.com Group Limited Sponsored ADR",s:"Defense World",u:"https://www.defenseworld.net/2026/07/20/boston-common-asset-management-llc-acquires-35970-shares-of-trip-com-group-limited-sponsored-adr-tcom.html",d:"2026-07-20"}],
+  "LLY":[{h:"Now That Eli Lilly Trades Above $1,000, Is a Stock Split Finally on the Table?",s:"The Motley Fool",u:"https://www.fool.com/investing/2026/07/20/now-that-eli-lilly-trades-above-1000-is-a-stock-sp/",d:"2026-07-20"}],
+  "SLB":[{h:"SLB (SLB) Sees a More Significant Dip Than Broader Market: Some Facts to Know",s:"Zacks",u:"https://www.zacks.com/stock/news/2956781/slb-slb-sees-a-more-significant-dip-than-broader-market-some-facts-to-know",d:"2026-07-20"}]
+};
+
+const gmailNote = {h:"Semafor Flagship's July 21 brief ('Trump's new Canada tariffs') reports the US has imposed a fresh 50% tariff on several Canadian goods and that Houthi forces have declared a 'maritime embargo'; the July 20 edition ('Only terrible choices') separately reported the renewed Iran conflict driving oil above $90 over the weekend, framing Western policymakers as facing a run of bad options. Finimize's July 20 daily brief ('Ryanair came in low') covered European industrials (Prysmian) with no direct watchlist tie-in this run.",s:"Semafor Flagship (Gmail newsletter)",u:"https://semafor.com",d:"2026-07-21"};
+
+/* DATA-END */
+
+const fmt=(x,dec=2)=>x.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+const sg=x=>x>=0?'+':'';
+const cls=x=>x>=0?'green':'red';
+const consBadge=c=>{if(!c)return '<span class="tk">—</span>';const l=c.toLowerCase();const k=l.includes('buy')||l.includes('overweight')?'b-buy':l.includes('sell')?'b-sell':'b-hold';return `<span class="badge ${k}">${c}</span>`;};
+
+document.getElementById('asof').textContent="As of "+new Date(asOf).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})+" · prices FMP/Alpha Vantage, some fundamentals web-sourced where FMP's plan gates coverage";
+
+function mcard(flag,v,chg,range,extra){
+  let html=`<div class="mcard"><div class="flag">${flag}</div><div class="v">${v}</div>`;
+  if(chg!=null) html+=`<div class="chg ${cls(chg)}">${sg(chg)}${chg.toFixed(2)}%</div>`;
+  if(range) html+=`<div class="range">${range}</div>`;
+  if(extra) html+=extra;
+  html+='</div>';
+  return html;
+}
+document.getElementById('mpulse').innerHTML =
+  mcard("S&amp;P 500", fmt(spx.v), spx.chg, "52wk "+fmt(spx.lo)+" – "+fmt(spx.hi)) +
+  mcard("World — "+world.name, "$"+fmt(world.v), world.chg, "52wk "+fmt(world.lo)+" – "+fmt(world.hi)) +
+  mcard("USD / MYR", fmt(usdmyr.v,4), null, "52wk "+fmt(usdmyr.lo52,3)+" – "+fmt(usdmyr.hi52,3)) +
+  mcard("Brent Crude", "$"+fmt(brent.v), brent.chg, "Iran ceasefire unravelling — see catalysts below") +
+  mcard("Gold Spot (XAU)", "$"+fmt(gold.v), null, "Still ~25% below the ~$5,600 June peak") +
+  mcard("FBM KLCI", fmt(klci.v), klci.chg, "Plantation-led gain, bucking a weaker regional tape") +
+  mcard("Bitcoin (BTC)", "$"+fmt(btc.v), btc.chg, "52wk "+fmt(btc.lo)+" – "+fmt(btc.hi));
+
+function lineChart(id,labels,data,color){
+  new Chart(document.getElementById(id),{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+'22',fill:true,tension:.25,pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e',maxTicksLimit:8,font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#20262e'}}}}});
+}
+lineChart('chSpx', spxHist.map(x=>x[0]), spxHist.map(x=>x[1]), '#58a6ff');
+lineChart('chFx', fxHist.map(x=>x[0]), fxHist.map(x=>x[1]), '#a371f7');
+lineChart('chBrent', brentHist.map(x=>x[0]), brentHist.map(x=>x[1]), '#d29922');
+lineChart('chBtc', btcHist.map(x=>x[0]), btcHist.map(x=>x[1]), '#f7931a');
+
+// ===== WATCHLIST TABLES (split by market) =====
+document.getElementById('wlnote').textContent = wlNote;
+
+const upside=w=>(w.tgt/w.p-1)*100, pos52=w=>(w.p-w.lo)/(w.hi-w.lo)*100;
+function renderWlTable(elId, mkt){
+  const rows=watchlist.filter(w=>w.mkt===mkt).sort((a,b)=>upside(b)-upside(a));
+  let html=`<thead><tr><th class="l">Stock</th><th>Price</th><th>Day %</th><th class="l">Analyst</th><th>Target ↑</th><th>P/E</th><th>PEG</th><th>Yield</th><th class="l">52-wk range</th></tr></thead><tbody>`;
+  for(const w of rows){
+    const up=upside(w),p52=pos52(w);
+    const calls=(w.buy!=null)?`<span class="tk">${w.buy}B / ${w.hold??0}H / ${w.sell??0}S</span>`:`<span class="tk">web</span>`;
+    html+=`<tr><td class="l"><div class="nm">${w.n}${w.watch?'<span class="badge b-watch">watch-only</span>':''}</div><div class="tk">${w.t} · ${w.mkt}${w.src==='web'?' <span class="badge b-web">web</span>':''}</div></td><td>${fmt(w.p)} <span class="tk">${w.cur}</span></td><td class="${cls(w.d)}">${sg(w.d)}${w.d.toFixed(2)}%</td><td class="l">${consBadge(w.cons)}<br>${calls}</td><td class="${cls(up)}">${sg(up)}${up.toFixed(0)}%</td><td>${w.pe!=null?w.pe.toFixed(1):'—'}</td><td>${w.peg!=null&&w.peg>0?w.peg.toFixed(2):'—'}</td><td>${w.yld!=null?w.yld.toFixed(2)+'%':'—'}</td><td class="l" style="min-width:120px"><span class="tk">${fmt(w.lo)}–${fmt(w.hi)}</span><div class="bar"><span style="width:${p52.toFixed(0)}%;background:${p52<33?'#3fb950':p52>66?'#f85149':'#d29922'}"></span></div></td></tr>`;
+  }
+  html+=`</tbody>`;document.getElementById(elId).innerHTML=html;
+}
+renderWlTable('tbl-wl-us','US');
+renderWlTable('tbl-wl-my','MY');
+renderWlTable('tbl-wl-sg','SG');
+document.getElementById('wlnote-sg').textContent = "All SG fundamentals are web-sourced (FMP's analyst/grades endpoints are plan-gated for SGX tickers); REITs show dividend yield in place of P/E.";
+
+// ===== CATALYSTS =====
+const dirLabel = {pos:"Positive",neg:"Negative",mix:"Mixed"};
+document.getElementById('catalysts').innerHTML=catalysts.map(c=>{
+  const dcol={"+":"green","-":"red","~":"amber"},dsym={"+":"▲","-":"▼","~":"◆"};
+  const chips=c.exposure.map(e=>{const w=watchlist.find(x=>x.t===e.tk);const nm=w?w.n:e.tk;return `<span class="chip" title="${e.note}"><span class="d ${dcol[e.dir]}">${dsym[e.dir]}</span> ${nm} <span class="tk">${e.tk}</span></span>`;}).join('');
+  const srcs=c.srcs.map(s=>`<a href="${s.u}" target="_blank" rel="noopener">${s.s} ↗</a>`).join('');
+  return `<div class="cat"><div class="ctag">${c.tag}</div><h3>${c.theme}</h3><span class="dirbadge dir-${c.dir}">${dirLabel[c.dir]}</span><div class="facts" style="margin-top:8px">${c.facts}</div><div class="exp">${chips}</div><div class="watch"><b>Watch:</b> ${c.watch}</div><div class="srcs">${srcs}</div></div>`;
+}).join('');
+</script>
+</body>
+</html>
