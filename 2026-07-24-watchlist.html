@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchlist — MYR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#2a3038;--text:#e6edf3;--muted:#8b949e;--green:#3fb950;--red:#f85149;--accent:#58a6ff;--amber:#d29922}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;padding:0 26px 40px;max-width:1180px;margin:0 auto}
+  h1{font-size:20px;font-weight:600}
+  h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:30px 0 12px}
+  .sub{color:var(--muted);font-size:12.5px;margin:2px 0 4px}
+  .green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+  .topbar{position:sticky;top:0;background:var(--bg);padding:22px 0 12px;z-index:10;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:6px 16px 12px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:right;white-space:nowrap}
+  th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border)}
+  td{border-bottom:1px solid #20262e}
+  th.l,td.l{text-align:left}
+  .nm{font-weight:600;font-size:14px}.tk{color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.02em}
+  .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:6px}
+  .mcard{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px 16px}
+  .mcard .flag{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+  .mcard .v{font-size:22px;font-weight:700}
+  .mcard .chg{font-size:13px;font-weight:600;margin-top:2px}
+  .mcard .range{font-size:11px;color:var(--muted);margin-top:6px}
+  .chartbox{position:relative;height:170px;margin-top:8px}
+  .chartbox.tall{height:220px}
+  .bar{height:6px;border-radius:4px;background:#20262e;overflow:hidden;margin-top:4px}.bar>span{display:block;height:100%}
+  .badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:0;vertical-align:middle;font-weight:600}
+  .b-buy{background:rgba(63,185,80,.15);color:var(--green)}.b-hold{background:rgba(210,153,34,.15);color:var(--amber)}.b-sell{background:rgba(248,81,73,.15);color:var(--red)}
+  .b-web{background:#21262d;color:var(--muted);font-weight:500}
+  .b-watch{background:rgba(210,153,34,.18);color:var(--amber);font-weight:600}
+  .pill{display:inline-block;background:#21262d;border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:11px;color:var(--muted);margin-left:6px;vertical-align:middle}
+  .cat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:14px}
+  .cat h3{font-size:15px;margin-bottom:2px;display:inline-block}
+  .cat .ctag{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .cat .facts{font-size:13px;color:#c9d1d9;margin-bottom:10px}
+  .exp{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px}
+  .chip .d{font-weight:700}.chip.held{border-color:#3b4048}
+  .heldtag{font-size:9px;background:#21262d;color:var(--muted);padding:0 4px;border-radius:4px;margin-left:3px}
+  .cat .watch{font-size:12px;color:var(--muted);border-top:1px solid #20262e;padding-top:8px}
+  .cat .srcs{margin-top:6px;font-size:11.5px}.cat .srcs a{color:var(--accent);text-decoration:none;margin-right:12px}
+  .disc{font-size:11.5px;color:var(--muted);font-style:italic;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+  .dirbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+  .dir-pos{background:rgba(63,185,80,.15);color:var(--green)}
+  .dir-neg{background:rgba(248,81,73,.15);color:var(--red)}
+  .dir-mix{background:rgba(210,153,34,.15);color:var(--amber)}
+  @media(max-width:900px){.mgrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.mgrid{grid-template-columns:1fr}body{padding:0 14px 30px}}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Watchlist <span class="pill">Base: MYR</span></h1>
+  </div>
+  <div class="sub" id="asof"></div>
+
+  <h2>Market Pulse</h2>
+  <div class="mgrid" id="mpulse"></div>
+  <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px">
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">S&amp;P 500 — last ~4 weeks</div><div class="chartbox"><canvas id="chSpx"></canvas></div></div>
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">USD/MYR — last ~5 weeks</div><div class="chartbox"><canvas id="chFx"></canvas></div></div>
+  </div>
+  <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px">
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">Brent crude (USD/bbl) — last ~13 weeks</div><div class="chartbox"><canvas id="chBrent"></canvas></div></div>
+    <div class="panel" style="padding:14px 16px"><div class="mvhead sub" style="margin-bottom:2px">Bitcoin (USD) — last ~4 weeks</div><div class="chartbox"><canvas id="chBtc"></canvas></div></div>
+  </div>
+  <div class="disc">Market data: S&amp;P 500, World (VT), Brent, gold and Bitcoin via FMP/Alpha Vantage live quotes; FBM KLCI via web search (FMP index/forex endpoints are gated on the current plan tier). USD/MYR spot and history via Alpha Vantage.</div>
+
+  <h2>Watchlist — US Market</h2>
+  <div class="disc" id="wlnote"></div>
+  <div class="panel"><div style="overflow-x:auto"><table id="tbl-wl-us"></table></div></div>
+
+  <h2>Watchlist — Malaysia (Bursa)</h2>
+  <div class="panel"><div style="overflow-x:auto"><table id="tbl-wl-my"></table></div></div>
+
+  <h2>Watchlist — Singapore (SGX)</h2>
+  <div class="disc" id="wlnote-sg"></div>
+  <div class="panel"><div style="overflow-x:auto"><table id="tbl-wl-sg"></table></div></div>
+
+  <h2>Catalyst Radar — positive / negative reads from today's news</h2>
+  <div class="disc">Directional tags are analysis/speculation, not recommendations — they flag exposure and what to watch, so you decide. Facts are sourced; "HELD" marks a position already in your portfolio. "Watch-only" marks names flagged as monitor-not-chase in the original screen (MU, NEM).</div>
+  <div id="catalysts"></div>
+
+<script>
+/* DATA-START — the daily task replaces everything between DATA-START and DATA-END. Do not edit markup/CSS/render-logic outside these markers. */
+const asOf = "2026-07-24T01:15:00Z";
+
+// ===== MARKET PULSE =====
+const spx = {v:7408.97, chg:-1.20, lo:6212.69, hi:7620.90};
+const world = {v:155.85, chg:null, lo:127.79, hi:159.41, name:"Vanguard Total World (VT)"};
+const usdmyr = {v:4.0960, chg:null, lo52:3.885, hi52:4.154};
+const brent = {v:100.65, chg:6.9};
+const gold = {v:4046.54, chg:null};
+const klci = {v:1711.37, chg:-0.52};
+const btc = {v:66050.70, chg:-1.12, lo:57747.77, hi:126198.07};
+
+const spxHist = [["06-23",7365.45],["06-24",7358.21],["06-25",7357.48],["06-26",7354.03],["06-29",7440.43],["06-30",7499.36],["07-01",7483.23],["07-02",7483.24],["07-06",7537.43],["07-07",7503.85],["07-08",7482.71],["07-09",7543.64],["07-10",7575.39],["07-13",7515.34],["07-14",7543.59],["07-15",7572.40],["07-16",7533.77],["07-17",7457.69],["07-20",7443.28],["07-21",7498.96],["07-22",7484.00],["07-23",7408.97]];
+const fxHist = [["06-26",4.085],["06-29",4.067],["06-30",4.082],["07-01",4.092],["07-02",4.077],["07-03",4.067],["07-06",4.082],["07-07",4.067],["07-08",4.074],["07-09",4.074],["07-10",4.067],["07-13",4.068],["07-14",4.076],["07-15",4.076],["07-16",4.070],["07-17",4.090],["07-20",4.090],["07-21",4.087],["07-22",4.084],["07-24",4.096]];
+const brentHist = [["05-01",119.63],["05-08",105.88],["05-15",110.53],["05-22",110.61],["05-29",97.05],["06-05",98.95],["06-12",93.76],["06-19",81.00],["06-26",73.63],["07-03",69.70],["07-10",73.33],["07-17",82.93],["07-22",94.13],["07-23",100.65]];
+const btcHist = [["06-27",59934.84],["06-28",59474.01],["06-29",60162.73],["06-30",58523.93],["07-01",59961.45],["07-02",61484.02],["07-03",62520.22],["07-04",63086.45],["07-05",63580.44],["07-06",64001.84],["07-07",63323.27],["07-08",62237.70],["07-09",63175.25],["07-10",64128.49],["07-11",63773.04],["07-12",63740.32],["07-13",62264.94],["07-14",64988.64],["07-15",64716.63],["07-16",63770.60],["07-17",63894.00],["07-18",64796.36],["07-19",64794.52],["07-20",64728.47],["07-21",66163.40],["07-22",66033.58],["07-23",66050.70]];
+
+const wlNote = "Friday morning MYT (~9:15am), pre-Asia-open refresh. Obsidian's Investments/Watchlist folder was not reachable from this sandbox this run (only the connected Documents/Claude folder is mounted) — fell back to investments/inputs/watchlist.csv per the fallback rule; the 29-ticker universe is unchanged from the prior run so no coverage was lost, but flagging this so the Obsidian migration gets checked. FMP's quote/batch-quote endpoint remains fully gated on the current plan tier, and the news search-stock-news endpoint is gated too, so all prices are again web-sourced; analyst grades-summary, price-target-consensus and statements metrics-ratios-ttm remain FMP-covered only for XOM/MSFT/GOOGL/BABA/TSM. Malaysia: Public Bank matched its last print (+0.19%); Gamuda, YTL Power, Resintech and Telekom Malaysia returned conflicting or stale web quotes (several dated July 2-10) and are carried at last-known levels, flagged low-confidence — Bursa coverage from generic web search continues to lag badly and is the weakest link in this pipeline. Singapore: ST Engineering and CLAR matched prior prints; CICT (S$2.48, +0.82%), Keppel DC REIT (S$2.33, -0.43%) and Keppel Ltd (S$11.42, +0.62%) got fresher confirmed quotes than the prior run. US: broad risk-off session — the S&P 500 fell 1.20% to 7,408.97 (FMP index-quote, ungated) as Brent crude spiked above $100/bbl (a two-month high per Finimize's Daily Brief) on Houthi attacks against Saudi tankers in the Red Sea, and the 'Magnificent Seven' reportedly shed nearly $800B in combined market value on AI-capex jitters (Semafor Flagship) following Alphabet's guidance hike and Tesla's negative free cash flow. GOOGL is carried at its post-earnings print (-5.94% to $348.88) pending a cleaner fresh quote. RTX beat Q2 EPS estimates ($1.89 vs $1.66 consensus) — see catalyst below. CHA and TCOM returned stale/conflicting web data again this run and are carried at last-known levels. World (VT) and Bitcoin have no fresher data this run (FMP quote gated, Alpha Vantage not queried for crypto) and are carried unchanged — flagged stale. USD/MYR spot (Alpha Vantage) at 4.0960; FX_DAILY and BRENT history calls hit Alpha Vantage's daily rate limit this run, so the daily chart series are carried forward with only the latest point appended from other sources.";
+
+const watchlist = [
+  {t:"5398",n:"Gamuda",mkt:"MY",cur:"MYR",p:4.26,d:0.71,lo:3.70,hi:5.80,cons:null,buy:null,hold:null,sell:null,tgt:5.27,pe:22.4,peg:null,yld:null,src:"web",watch:false,themes:["AI/DC","Construction"]},
+  {t:"5347",n:"Tenaga Nasional (TNB)",mkt:"MY",cur:"MYR",p:14.36,d:-0.28,lo:12.50,hi:14.90,cons:"Strong Buy",buy:19,hold:2,sell:0,tgt:16.30,pe:17.7,peg:null,yld:3.71,src:"web",watch:false,themes:["AI/Power","Oil costs"]},
+  {t:"6742",n:"YTL Power",mkt:"MY",cur:"MYR",p:3.97,d:-1.0,lo:2.51,hi:4.50,cons:"Strong Buy",buy:11,hold:3,sell:0,tgt:4.62,pe:15.8,peg:null,yld:null,src:"web",watch:false,themes:["AI/DC power","Data centres"]},
+  {t:"1295",n:"Public Bank",mkt:"MY",cur:"MYR",p:5.19,d:0.19,lo:4.18,hi:5.28,cons:"Buy",buy:13,hold:5,sell:0,tgt:5.44,pe:13.89,peg:null,yld:4.88,src:"web",watch:false,themes:["MY banking"]},
+  {t:"7232",n:"Resintech Berhad",mkt:"MY",cur:"MYR",p:0.47,d:-1.05,lo:0.41,hi:0.66,cons:null,buy:null,hold:null,sell:null,tgt:null,pe:null,peg:null,yld:null,src:"web",watch:false,themes:["Industrial products","Resins/specialty chemicals"]},
+  {t:"4863",n:"Telekom Malaysia",mkt:"MY",cur:"MYR",p:7.18,d:-1.37,lo:6.69,hi:8.30,cons:"Buy",buy:15,hold:4,sell:2,tgt:7.78,pe:15.9,peg:null,yld:null,src:"web",watch:false,themes:["Telco","Digital infrastructure"]},
+  {t:"A17U.SI",n:"CapitaLand Ascendas REIT (CLAR)",mkt:"SG",cur:"SGD",p:2.54,d:0.40,lo:2.42,hi:2.92,cons:"Strong Buy",buy:15,hold:null,sell:0,tgt:3.11,pe:null,peg:null,yld:6.0,src:"web",watch:false,themes:["Industrial/logistics REIT","Diversified","Strongest sponsor"]},
+  {t:"C38U.SI",n:"CapitaLand Integrated Commercial Trust (CICT)",mkt:"SG",cur:"SGD",p:2.48,d:0.82,lo:2.17,hi:2.57,cons:"Buy",buy:12,hold:null,sell:0,tgt:2.60,pe:null,peg:null,yld:5.0,src:"web",watch:false,themes:["Retail/commercial anchor","Income stability"]},
+  {t:"AJBU.SI",n:"Keppel DC REIT (KDCREIT)",mkt:"SG",cur:"SGD",p:2.33,d:-0.43,lo:2.15,hi:2.44,cons:"Strong Buy",buy:14,hold:null,sell:0,tgt:2.629,pe:null,peg:null,yld:4.55,src:"web",watch:false,themes:["Data centre REIT","Growth optionality","Tech-adjacent"]},
+  {t:"S63.SI",n:"ST Engineering",mkt:"SG",cur:"SGD",p:10.55,d:1.54,lo:7.54,hi:11.63,cons:"Buy",buy:10,hold:4,sell:1,tgt:11.58,pe:33.6,peg:null,yld:null,src:"web",watch:false,themes:["Defense/Aerospace","Singapore blue-chip"]},
+  {t:"BN4.SI",n:"Keppel Ltd",mkt:"SG",cur:"SGD",p:11.42,d:0.62,lo:8.06,hi:13.25,cons:"Strong Buy",buy:11,hold:0,sell:1,tgt:12.59,pe:20.9,peg:null,yld:null,src:"web",watch:false,themes:["Infrastructure/Energy transition","Asset management"]},
+  {t:"XOM",n:"Exxon Mobil",mkt:"US",cur:"USD",p:156.89,d:1.58,lo:105.53,hi:176.41,cons:"Buy",buy:25,hold:26,sell:5,tgt:166.73,pe:26.01,peg:null,yld:2.63,src:"fmp",watch:false,themes:["Oil & gas","Geopolitics"]},
+  {t:"SHEL",n:"Shell",mkt:"US",cur:"USD",p:88.56,d:0.90,lo:68.63,hi:94.90,cons:"Buy",buy:16,hold:null,sell:null,tgt:96.47,pe:13.21,peg:null,yld:3.34,src:"web",watch:false,themes:["Oil & gas","LNG"]},
+  {t:"SLB",n:"Schlumberger",mkt:"US",cur:"USD",p:47.22,d:-0.94,lo:31.64,hi:58.82,cons:"Buy",buy:30,hold:null,sell:null,tgt:60.93,pe:21.03,peg:null,yld:2.50,src:"web",watch:false,themes:["Oil & gas","Oilfield svcs"]},
+  {t:"MSFT",n:"Microsoft",mkt:"US",cur:"USD",p:381.58,d:-2.24,lo:349.20,hi:555.45,cons:"Strong Buy",buy:66,hold:16,sell:0,tgt:556.75,pe:22.65,peg:0.76,yld:0.93,src:"fmp",watch:false,themes:["AI","Cloud"]},
+  {t:"GOOGL",n:"Alphabet",mkt:"US",cur:"USD",p:348.88,d:-5.94,lo:186.15,hi:408.61,cons:"Buy",buy:71,hold:11,sell:1,tgt:423.44,pe:15.77,peg:0.14,yld:0.27,src:"fmp",watch:false,themes:["AI","Cloud"]},
+  {t:"AVGO",n:"Broadcom",mkt:"US",cur:"USD",p:392.47,d:-1.09,lo:273.00,hi:495.0,cons:"Strong Buy",buy:48,hold:null,sell:null,tgt:525.44,pe:66.04,peg:null,yld:0.66,src:"web",watch:false,themes:["AI silicon","Networking"]},
+  {t:"ANET",n:"Arista Networks",mkt:"US",cur:"USD",p:176.61,d:0.17,lo:106.987,hi:189.817,cons:"Strong Buy",buy:30,hold:1,sell:0,tgt:192.31,pe:55.0,peg:null,yld:null,src:"web",watch:false,themes:["AI networking"]},
+  {t:"VRT",n:"Vertiv",mkt:"US",cur:"USD",p:301.16,d:-1.13,lo:118.70,hi:379.935,cons:"Strong Buy",buy:27,hold:null,sell:null,tgt:380.0,pe:73.7,peg:null,yld:null,src:"web",watch:false,themes:["DC power & cooling"]},
+  {t:"TSM",n:"Taiwan Semiconductor",mkt:"US",cur:"USD",p:415.58,d:-1.34,lo:223.70,hi:479.0,cons:"Buy",buy:18,hold:7,sell:0,tgt:586.0,pe:27.88,peg:null,yld:0.91,src:"fmp",watch:false,themes:["AI foundry","Taiwan risk"]},
+  {t:"MU",n:"Micron",mkt:"US",cur:"USD",p:990.21,d:3.20,lo:103.38,hi:1255.0,cons:"Strong Buy",buy:45,hold:null,sell:null,tgt:1491.95,pe:21.65,peg:null,yld:null,src:"web",watch:true,themes:["HBM memory"]},
+  {t:"BABA",n:"Alibaba",mkt:"US",cur:"USD",p:114.06,d:-2.14,lo:91.99,hi:192.67,cons:"Buy",buy:51,hold:7,sell:1,tgt:185.0,pe:17.47,peg:null,yld:0.90,src:"fmp",watch:false,themes:["China consumer","AI/Cloud"]},
+  {t:"TCEHY",n:"Tencent",mkt:"US",cur:"USD",p:54.97,d:-0.05,lo:52.84,hi:87.68,cons:"Buy",buy:3,hold:null,sell:null,tgt:97.49,pe:14.96,peg:null,yld:1.02,src:"web",watch:false,themes:["China consumer","Gaming/fintech"]},
+  {t:"JD",n:"JD.com",mkt:"US",cur:"USD",p:30.10,d:-0.18,lo:24.51,hi:36.86,cons:"Strong Buy",buy:36,hold:null,sell:null,tgt:39.52,pe:22.80,peg:null,yld:3.32,src:"web",watch:false,themes:["China consumer","E-commerce"]},
+  {t:"TCOM",n:"Trip.com",mkt:"US",cur:"USD",p:42.58,d:-2.45,lo:38.04,hi:78.99,cons:"Strong Buy",buy:29,hold:null,sell:null,tgt:60.69,pe:6.44,peg:null,yld:null,src:"web",watch:false,themes:["China consumer","Travel"]},
+  {t:"CHA",n:"Chagee",mkt:"US",cur:"USD",p:11.57,d:-0.09,lo:8.98,hi:25.85,cons:"Buy",buy:11,hold:null,sell:null,tgt:15.28,pe:18.08,peg:null,yld:7.52,src:"web",watch:false,themes:["China consumer","F&B"]},
+  {t:"LLY",n:"Eli Lilly",mkt:"US",cur:"USD",p:1186.45,d:-1.05,lo:623.78,hi:1249.45,cons:"Buy",buy:24,hold:5,sell:2,tgt:1270.37,pe:42.09,peg:null,yld:null,src:"web",watch:false,themes:["Healthcare","GLP-1"]},
+  {t:"NEM",n:"Newmont",mkt:"US",cur:"USD",p:94.72,d:-1.11,lo:58.97,hi:134.88,cons:"Buy",buy:22,hold:null,sell:null,tgt:129.95,pe:12.08,peg:null,yld:null,src:"web",watch:true,themes:["Precious metals","Gold"]},
+  {t:"RTX",n:"RTX Corp",mkt:"US",cur:"USD",p:194.88,d:0.89,lo:143.56,hi:214.50,cons:"Buy",buy:23,hold:null,sell:null,tgt:215.41,pe:32.7,peg:null,yld:null,src:"web",watch:false,themes:["Defense","Geopolitics"]}
+];
+
+const catalysts = [
+  {theme:"Brent crude spikes above $100/bbl — a two-month high — as Houthi militants strike Saudi tankers in the Red Sea", tag:"Energy · Geopolitics", dir:"mix",
+   facts:"Brent crude traded above $100/bbl on Thursday (July 23), its highest in two months, after Iran-backed Houthi militants said they'd struck two Saudi tankers in the Red Sea (Finimize Daily Brief). The escalation matters because Saudi Arabia had been routing roughly 4.9 million barrels a day through the Red Sea specifically to dodge the near-shutdown of the Strait of Hormuz — a Houthi blockade could remove that workaround entirely. TotalEnergies separately posted $6B in adjusted Q2 profit (+68% YoY) on the back of the same dynamic: Brent's quarterly average was up 45% YoY, and near-shutdown of Hormuz plus Ukrainian strikes on Russian refining capacity (knocking out roughly a tenth of global refining) have combined to keep crude elevated. Alpha Vantage's own daily/weekly Brent and FX series hit the API's rate limit this run, so today's $100.65 print is a web/newsletter-sourced spot rather than a settled AV close.",
+   exposure:[{tk:"XOM",dir:"+",note:"Integrated major benefits from the elevated price regardless of near-term flow disruption"},{tk:"SHEL",dir:"+",note:"Upstream + LNG leverage to the higher price, similar dynamic to TotalEnergies' quarter"},{tk:"SLB",dir:"~",note:"Oilfield services geared to upstream capex more than spot price swings"},{tk:"5347",dir:"~",note:"TNB — higher fuel/import costs, cushioned by the regulated ICPT pass-through mechanism"}],
+   watch:"Whether the Red Sea workaround stays open, further Houthi/tanker attacks, whether Brent holds above $100 into next week, and central-bank commentary on energy-driven inflation risk",
+   srcs:[{s:"Finimize Daily Brief",u:"https://finimize.com"},{s:"Semafor Flagship",u:"https://semafor.com"}]},
+  {theme:"AI-capex jitters drag the 'Magnificent Seven' — Alphabet's guidance hike and Tesla's negative free cash flow spook investors", tag:"Big Tech · AI Capex", dir:"neg",
+   facts:"The Magnificent Seven mega-caps reportedly shed nearly $800B in combined market value on Thursday (Semafor Flagship), with Wall Street's fear gauge hitting a one-month high, as pessimism over steep AI spending combined with the Iran-driven oil spike to drag global markets lower. Alphabet's Q2 beat (revenue $119.80B vs $116.93B expected, Google Cloud +82% YoY to $24.77B) was overshadowed by a hike in 2026 capex guidance to $195-205B, sending GOOGL down roughly 5.9% to $348.88. Tesla's negative free cash flow compounded the AI-spending unease the same session. Notably, memory names bucked the trend: Micron and SK Hynix rose on the read-through that hyperscaler capex (and therefore memory demand) isn't slowing — MU gained 3.2% to $990.21.",
+   exposure:[{tk:"GOOGL",dir:"-",note:"Revenue/cloud beat overshadowed by the capex guidance hike — the dominant swing factor this session"},{tk:"MSFT",dir:"~",note:"Reports its own Q4 FY26 earnings July 29 — investors will scrutinize its capex guidance next, per Truist/Oppenheimer commentary"},{tk:"AVGO",dir:"~",note:"Custom-silicon supplier to hyperscaler capex; directionally linked to the same capex debate"},{tk:"VRT",dir:"~",note:"Data-centre power/cooling name geared to the same hyperscaler capex cycle"},{tk:"ANET",dir:"~",note:"AI networking name geared to the same capex cycle"},{tk:"MU",dir:"+",note:"Bucked the selloff — rose on the view that higher hyperscaler capex sustains memory demand, not just GPU demand"}],
+   watch:"MSFT's July 29 earnings and capex commentary, whether GOOGL stabilizes once the capex narrative is digested, follow-through in AVGO/VRT/ANET on hyperscaler spending signals",
+   srcs:[{s:"Semafor Flagship",u:"https://semafor.com"},{s:"TipRanks",u:"https://www.tipranks.com/news/micron-technology-stock-mu-is-recovering-thank-elon-musk"}]},
+  {theme:"RTX beats Q2 EPS estimates ($1.89 vs $1.66 consensus) as it reports after Thursday's close", tag:"RTX · Defense earnings", dir:"pos",
+   facts:"RTX Corporation reported Q2 2026 earnings per share of $1.89, beating the Street's $1.66 estimate (TipRanks). The print follows a broader defense-spending backdrop: US lawmakers approved a record $1.15 trillion defense budget this week, driven partly by rising costs from the Iran war (Finimize Daily Brief) — a tailwind for defense contractors generally, even as it implies fiscal trade-offs elsewhere.",
+   exposure:[{tk:"RTX",dir:"+",note:"Beat on EPS; stock traded up modestly (+0.89%) into and around the print"}],
+   watch:"Forward guidance commentary and margin detail from the earnings call, follow-through in the stock over the next session",
+   srcs:[{s:"TipRanks",u:"https://www.tipranks.com/news/exxon-stock-xom-rises-as-higher-oil-prices-could-boost-q2-earnings-trump-says-iran-ceasefire-over"},{s:"Finimize Daily Brief",u:"https://finimize.com"}]},
+  {theme:"FBM KLCI eases 0.52% to 1,711.37, a weak rebound attempt as regional markets digest the oil spike", tag:"Malaysia · Weak rebound", dir:"mix",
+   facts:"FBM KLCI closed down 0.52% at 1,711.37 on July 22 (The Edge Malaysia), before opening modestly higher (+3.01 points to 1,714.38) on July 23 as energy stocks lifted the index (BusinessToday) — but The Star described the session as a 'weak rebound... as oil prices surge,' with no clean confirmed closing print obtained this run. Public Bank (+0.19%) was the only MY name with a fully fresh, consistent confirmation; Gamuda, TNB, YTL Power, Resintech and Telekom Malaysia all returned conflicting or dated web quotes and are carried at last-known levels.",
+   exposure:[{tk:"1295",dir:"~",note:"Broad index-level exposure; only name with a clean fresh confirmation this run"},{tk:"5398",dir:"~",note:"Broad index-level exposure; carried at last-known level, low confidence"},{tk:"5347",dir:"~",note:"Index-level exposure offset by higher oil-linked input costs (see Energy catalyst)"},{tk:"4863",dir:"~",note:"Carried at last-known level; no fresh confirmation this run"}],
+   watch:"Whether Friday's close confirms a genuine rebound or another leg down as Brent holds above $100",
+   srcs:[{s:"The Edge Malaysia",u:"https://theedgemalaysia.com/node/811672"},{s:"BusinessToday",u:"https://www.businesstoday.com.my/2026/07/23/bursa-malaysia-opens-higher-as-energy-stocks-lift-fbm-klci/"},{s:"The Star",u:"https://www.thestar.com.my/business/business-news/2026/07/23/weak-rebound-on-fbm-klci-as-oil-prices-surge"}]}
+];
+
+const news = {
+  "GOOGL":[{h:"Alphabet earnings takeaways: Q2 revenue beats, GOOGL stock sinks on 2026 capex hike",s:"CNBC",u:"https://www.cnbc.com/2026/07/22/google-earnings-q2-goog-live-updates.html",d:"2026-07-22"},{h:"Wall Street Flinched At Big Tech's AI Bill",s:"Finimize",u:"https://finimize.com",d:"2026-07-23"}],
+  "XOM":[{h:"Navigating the Energy Surge: A Value-Chain Guide to Energy ETFs",s:"ETF Trends",u:"https://www.etftrends.com/thematic-investing-content-hub/navigating-energy-surge-value-chain-guide-to-energy-etfs/",d:"2026-07-24"}],
+  "SHEL":[{h:"Shell assumed with a Neutral at Piper Sandler",s:"TheFly",u:"https://www.tipranks.com/news/the-fly/shell-assumed-with-a-neutral-at-piper-sandler-thefly-news",d:"2026-07-23"}],
+  "MU":[{h:"Micron stock gains 3%: how is the company benefiting from Alphabet and Tesla earnings",s:"Invezz",u:"https://invezz.com/news/2026/07/23/micron-stock-gains-3-how-is-the-company-benefiting-from-alphabet-and-tesla-earnings/",d:"2026-07-23"}],
+  "RTX":[{h:"RTX Q2 2026 EPS beats consensus ($1.89 vs $1.66)",s:"TipRanks",u:"https://www.tipranks.com/stocks/rtx",d:"2026-07-23"}],
+  "5347":[{h:"Weak rebound on FBM KLCI as oil prices surge",s:"The Star",u:"https://www.thestar.com.my/business/business-news/2026/07/23/weak-rebound-on-fbm-klci-as-oil-prices-surge",d:"2026-07-23"}]
+};
+
+const gmailNote = {h:"Finimize's July 23 Daily Brief ('Wall Street Flinched At Big Tech's AI Bill') confirms Brent crossed $100/bbl on the Houthi Red Sea tanker attacks and covers TotalEnergies' blowout quarter on the same energy-price dynamic; Semafor Flagship's July 24 edition ('Oil spikes, stocks fall on Iran and AI fears') reports the Magnificent Seven shed nearly $800B in market value Thursday on AI-capex and Iran-war fears together. No Syfe newsletter surfaced in the last 3 days.",s:"Finimize Daily Brief / Semafor Flagship (Gmail, July 23-24)",u:"https://semafor.com",d:"2026-07-24"};
+
+/* DATA-END */
+
+const fmt=(x,dec=2)=>x.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+const sg=x=>x>=0?'+':'';
+const cls=x=>x>=0?'green':'red';
+const consBadge=c=>{if(!c)return '<span class="tk">—</span>';const l=c.toLowerCase();const k=l.includes('buy')||l.includes('overweight')?'b-buy':l.includes('sell')?'b-sell':'b-hold';return `<span class="badge ${k}">${c}</span>`;};
+
+document.getElementById('asof').textContent="As of "+new Date(asOf).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})+" · prices mostly web-sourced this run (FMP quote/news gated), fundamentals FMP where covered";
+
+function mcard(flag,v,chg,range,extra){
+  let html=`<div class="mcard"><div class="flag">${flag}</div><div class="v">${v}</div>`;
+  if(chg!=null) html+=`<div class="chg ${cls(chg)}">${sg(chg)}${chg.toFixed(2)}%</div>`;
+  if(range) html+=`<div class="range">${range}</div>`;
+  if(extra) html+=extra;
+  html+='</div>';
+  return html;
+}
+document.getElementById('mpulse').innerHTML =
+  mcard("S&amp;P 500", fmt(spx.v), spx.chg, "52wk "+fmt(spx.lo)+" – "+fmt(spx.hi)) +
+  mcard("World — "+world.name, "$"+fmt(world.v), world.chg, "52wk "+fmt(world.lo)+" – "+fmt(world.hi)) +
+  mcard("USD / MYR", fmt(usdmyr.v,4), null, "52wk "+fmt(usdmyr.lo52,3)+" – "+fmt(usdmyr.hi52,3)) +
+  mcard("Brent Crude", "$"+fmt(brent.v), brent.chg, "Iran ceasefire unravelling — see catalysts below") +
+  mcard("Gold Spot (XAU)", "$"+fmt(gold.v), null, "Still ~25% below the ~$5,600 June peak") +
+  mcard("FBM KLCI", fmt(klci.v), klci.chg, "Plantation-led gain, bucking a weaker regional tape") +
+  mcard("Bitcoin (BTC)", "$"+fmt(btc.v), btc.chg, "52wk "+fmt(btc.lo)+" – "+fmt(btc.hi));
+
+function lineChart(id,labels,data,color){
+  new Chart(document.getElementById(id),{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+'22',fill:true,tension:.25,pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b949e',maxTicksLimit:8,font:{size:10}},grid:{display:false}},y:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#20262e'}}}}});
+}
+lineChart('chSpx', spxHist.map(x=>x[0]), spxHist.map(x=>x[1]), '#58a6ff');
+lineChart('chFx', fxHist.map(x=>x[0]), fxHist.map(x=>x[1]), '#a371f7');
+lineChart('chBrent', brentHist.map(x=>x[0]), brentHist.map(x=>x[1]), '#d29922');
+lineChart('chBtc', btcHist.map(x=>x[0]), btcHist.map(x=>x[1]), '#f7931a');
+
+// ===== WATCHLIST TABLES (split by market) =====
+document.getElementById('wlnote').textContent = wlNote;
+
+const upside=w=>(w.tgt/w.p-1)*100, pos52=w=>(w.p-w.lo)/(w.hi-w.lo)*100;
+function renderWlTable(elId, mkt){
+  const rows=watchlist.filter(w=>w.mkt===mkt).sort((a,b)=>upside(b)-upside(a));
+  let html=`<thead><tr><th class="l">Stock</th><th>Price</th><th>Day %</th><th class="l">Analyst</th><th>Target ↑</th><th>P/E</th><th>PEG</th><th>Yield</th><th class="l">52-wk range</th></tr></thead><tbody>`;
+  for(const w of rows){
+    const up=upside(w),p52=pos52(w);
+    const calls=(w.buy!=null)?`<span class="tk">${w.buy}B / ${w.hold??0}H / ${w.sell??0}S</span>`:`<span class="tk">web</span>`;
+    html+=`<tr><td class="l"><div class="nm">${w.n}${w.watch?'<span class="badge b-watch">watch-only</span>':''}</div><div class="tk">${w.t} · ${w.mkt}${w.src==='web'?' <span class="badge b-web">web</span>':''}</div></td><td>${fmt(w.p)} <span class="tk">${w.cur}</span></td><td class="${cls(w.d)}">${sg(w.d)}${w.d.toFixed(2)}%</td><td class="l">${consBadge(w.cons)}<br>${calls}</td><td class="${cls(up)}">${sg(up)}${up.toFixed(0)}%</td><td>${w.pe!=null?w.pe.toFixed(1):'—'}</td><td>${w.peg!=null&&w.peg>0?w.peg.toFixed(2):'—'}</td><td>${w.yld!=null?w.yld.toFixed(2)+'%':'—'}</td><td class="l" style="min-width:120px"><span class="tk">${fmt(w.lo)}–${fmt(w.hi)}</span><div class="bar"><span style="width:${p52.toFixed(0)}%;background:${p52<33?'#3fb950':p52>66?'#f85149':'#d29922'}"></span></div></td></tr>`;
+  }
+  html+=`</tbody>`;document.getElementById(elId).innerHTML=html;
+}
+renderWlTable('tbl-wl-us','US');
+renderWlTable('tbl-wl-my','MY');
+renderWlTable('tbl-wl-sg','SG');
+document.getElementById('wlnote-sg').textContent = "All SG fundamentals are web-sourced (FMP's analyst/grades endpoints are plan-gated for SGX tickers); REITs show dividend yield in place of P/E.";
+
+// ===== CATALYSTS =====
+const dirLabel = {pos:"Positive",neg:"Negative",mix:"Mixed"};
+document.getElementById('catalysts').innerHTML=catalysts.map(c=>{
+  const dcol={"+":"green","-":"red","~":"amber"},dsym={"+":"▲","-":"▼","~":"◆"};
+  const chips=c.exposure.map(e=>{const w=watchlist.find(x=>x.t===e.tk);const nm=w?w.n:e.tk;return `<span class="chip" title="${e.note}"><span class="d ${dcol[e.dir]}">${dsym[e.dir]}</span> ${nm} <span class="tk">${e.tk}</span></span>`;}).join('');
+  const srcs=c.srcs.map(s=>`<a href="${s.u}" target="_blank" rel="noopener">${s.s} ↗</a>`).join('');
+  return `<div class="cat"><div class="ctag">${c.tag}</div><h3>${c.theme}</h3><span class="dirbadge dir-${c.dir}">${dirLabel[c.dir]}</span><div class="facts" style="margin-top:8px">${c.facts}</div><div class="exp">${chips}</div><div class="watch"><b>Watch:</b> ${c.watch}</div><div class="srcs">${srcs}</div></div>`;
+}).join('');
+</script>
+</body>
+</html>
